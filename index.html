@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EPL Tracker CR ⚽</title>
+<meta name="description" content="Premier League – Resultados, predicciones y tabla en tiempo real para aficionados costarricenses"/>
+<meta name="theme-color" content="#070b16"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Barlow+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#070b16;font-family:'Rajdhani',sans-serif;color:#dde8ff;overscroll-behavior:none;}
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:#0d1220;}
+  ::-webkit-scrollbar-thumb{background:#00d4aa55;border-radius:4px;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes shimmer{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}
+  @keyframes probFill{from{width:0%}to{width:var(--w)}}
+  .fade{animation:fadeIn .3s ease;}
+  .rh:hover{background:#ffffff08!important;cursor:pointer;}
+  .pb{transition:all .15s;border:none;cursor:pointer;padding:5px 10px;border-radius:7px;
+      font-family:'Rajdhani',sans-serif;font-weight:600;font-size:12px;letter-spacing:.5px;}
+  .pb:hover{transform:scale(1.04);}
+  .pb:active{transform:scale(.97);}
+  #root{max-width:800px;margin:0 auto;min-height:100vh;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useCallback}=React;
+
+/* ═══════════════════ DATOS ═══════════════════ */
+const TEAMS={
+  ARS:{n:'Arsenal',      s:'ARS',c:'#EF0107',e:'🔴'},
+  MCI:{n:'Man City',     s:'MCI',c:'#6CABDD',e:'🔵'},
+  MUN:{n:'Man Utd',      s:'MUN',c:'#DA291C',e:'🔴'},
+  LFC:{n:'Liverpool',    s:'LFC',c:'#C8102E',e:'🔴'},
+  CFC:{n:'Chelsea',      s:'CFC',c:'#034694',e:'🔵'},
+  TOT:{n:'Tottenham',    s:'TOT',c:'#132257',e:'⚪'},
+  AVL:{n:'Aston Villa',  s:'AVL',c:'#95BFE5',e:'🟣'},
+  NEW:{n:'Newcastle',    s:'NEW',c:'#00A0A0',e:'⚫'},
+  BRI:{n:'Brighton',     s:'BRI',c:'#0057B8',e:'🔵'},
+  WHU:{n:'West Ham',     s:'WHU',c:'#7A263A',e:'🔴'},
+  EVE:{n:'Everton',      s:'EVE',c:'#003399',e:'🔵'},
+  BOU:{n:'Bournemouth',  s:'BOU',c:'#DA291C',e:'🍒'},
+  FUL:{n:'Fulham',       s:'FUL',c:'#CC0000',e:'⚫'},
+  BRE:{n:'Brentford',    s:'BRE',c:'#D20000',e:'🐝'},
+  NFO:{n:"Nott'm Forest",s:'NFO',c:'#DD0000',e:'🔴'},
+  CRY:{n:'Crystal Palace',s:'CRY',c:'#1B458F',e:'🦅'},
+  SUN:{n:'Sunderland',   s:'SUN',c:'#EB172B',e:'🔴'},
+  LEE:{n:'Leeds',        s:'LEE',c:'#f5c518',e:'🟡'},
+  WOL:{n:'Wolves',       s:'WOL',c:'#FDB913',e:'🐺'},
+  BUR:{n:'Burnley',      s:'BUR',c:'#6C1D45',e:'🟤'},
+};
+
+const STANDINGS=[
+  {r:1,a:'ARS',gp:30,w:20,d:7,l:3,pts:67},
+  {r:2,a:'MCI',gp:29,w:18,d:6,l:5,pts:60},
+  {r:3,a:'MUN',gp:29,w:14,d:9,l:6,pts:51},
+  {r:4,a:'AVL',gp:29,w:15,d:6,l:8,pts:51},
+  {r:5,a:'CFC',gp:29,w:13,d:9,l:7,pts:48},
+  {r:6,a:'LFC',gp:29,w:14,d:6,l:9,pts:48},
+  {r:7,a:'BRE',gp:29,w:13,d:5,l:11,pts:44},
+  {r:8,a:'EVE',gp:29,w:12,d:7,l:10,pts:43},
+  {r:9,a:'BOU',gp:29,w:9,d:13,l:7,pts:40},
+  {r:10,a:'FUL',gp:29,w:12,d:4,l:13,pts:40},
+  {r:11,a:'SUN',gp:29,w:10,d:10,l:9,pts:40},
+  {r:12,a:'NEW',gp:29,w:11,d:6,l:12,pts:39},
+  {r:13,a:'CRY',gp:29,w:10,d:8,l:11,pts:38},
+  {r:14,a:'BRI',gp:29,w:9,d:10,l:10,pts:37},
+  {r:15,a:'LEE',gp:29,w:7,d:10,l:12,pts:31},
+  {r:16,a:'TOT',gp:29,w:7,d:8,l:14,pts:29},
+  {r:17,a:'NFO',gp:29,w:7,d:7,l:15,pts:28},
+  {r:18,a:'WHU',gp:29,w:7,d:7,l:15,pts:28},
+  {r:19,a:'BUR',gp:29,w:4,d:7,l:18,pts:19},
+  {r:20,a:'WOL',gp:30,w:3,d:7,l:20,pts:16},
+];
+
+const RECENT=[
+  {h:'TOT',a:'CRY',s:'1-3',d:'5 Mar 26'},
+  {h:'NEW',a:'MUN',s:'2-1',d:'4 Mar 26'},
+  {h:'MCI',a:'NFO',s:'2-2',d:'4 Mar 26'},
+  {h:'AVL',a:'CFC',s:'1-4',d:'4 Mar 26'},
+  {h:'FUL',a:'WHU',s:'0-1',d:'4 Mar 26'},
+  {h:'BRI',a:'ARS',s:'0-1',d:'4 Mar 26'},
+  {h:'WOL',a:'LFC',s:'2-1',d:'3 Mar 26'},
+  {h:'LEE',a:'SUN',s:'0-1',d:'3 Mar 26'},
+  {h:'EVE',a:'BUR',s:'2-0',d:'3 Mar 26'},
+  {h:'BOU',a:'BRE',s:'0-0',d:'3 Mar 26'},
+];
+
+const UPCOMING=[
+  {id:'g1', h:'BUR',a:'BOU',date:'Sáb 14',time:'9:00',
+   prob:{h:23.2,a:52.3,d:24.5},
+   h2h:[{s:'25/26',r:'BOU 2-1 BUR'},{s:'24/25',r:'BOU 1-0 BUR'},{s:'23/24',r:'BOU 2-1 BUR'}]},
+  {id:'g2', h:'SUN',a:'BRI',date:'Sáb 14',time:'9:00',
+   prob:{h:27.2,a:44.2,d:28.6},
+   h2h:[{s:'25/26',r:'BRI 2-0 SUN'},{s:'24/25',r:'BRI 1-0 SUN'},{s:'23/24',r:'N/A'}]},
+  {id:'g3', h:'ARS',a:'EVE',date:'Sáb 14',time:'11:30',
+   prob:{h:69.5,a:11.0,d:19.5},
+   h2h:[{s:'25/26',r:'ARS 1-0 EVE'},{s:'24/25',r:'ARS 2-0 EVE'},{s:'23/24',r:'ARS 4-0 EVE'}]},
+  {id:'g4', h:'CFC',a:'NEW',date:'Sáb 14',time:'11:30',
+   prob:{h:52.1,a:24.7,d:23.2},
+   h2h:[{s:'25/26',r:'NEW 2-1 CFC'},{s:'24/25',r:'CFC 2-0 NEW'},{s:'23/24',r:'NEW 4-1 CFC'}]},
+  {id:'g5', h:'WHU',a:'MCI',date:'Sáb 14',time:'14:00',
+   prob:{h:21.3,a:56.3,d:22.4},
+   h2h:[{s:'25/26',r:'MCI 3-0 WHU'},{s:'24/25',r:'MCI 4-0 WHU'},{s:'23/24',r:'MCI 3-1 WHU'}]},
+  {id:'g6', h:'CRY',a:'LEE',date:'Dom 15',time:'8:00',
+   prob:{h:38.0,a:32.9,d:29.1},
+   h2h:[{s:'25/26',r:'LEE 2-1 CRY'},{s:'24/25',r:'CRY 1-0 LEE'},{s:'23/24',r:'N/A'}]},
+  {id:'g7', h:'MUN',a:'AVL',date:'Dom 15',time:'8:00',
+   prob:{h:55.7,a:21.1,d:23.2},
+   h2h:[{s:'25/26',r:'AVL 1-0 MUN'},{s:'24/25',r:'MUN 2-0 AVL'},{s:'23/24',r:'MUN 3-1 AVL'}]},
+  {id:'g8', h:'NFO',a:'FUL',date:'Dom 15',time:'8:00',
+   prob:{h:42.2,a:29.6,d:28.2},
+   h2h:[{s:'25/26',r:'NFO 2-1 FUL'},{s:'24/25',r:'NFO 2-2 FUL'},{s:'23/24',r:'FUL 2-0 NFO'}]},
+  {id:'g9', h:'LFC',a:'TOT',date:'Dom 15',time:'10:30',
+   prob:{h:74.9,a:10.3,d:14.8},
+   h2h:[{s:'25/26',r:'LFC 2-0 TOT'},{s:'24/25',r:'LFC 3-1 TOT'},{s:'23/24',r:'LFC 4-2 TOT'}]},
+  {id:'g10',h:'BRE',a:'WOL',date:'Lun 16',time:'14:00',
+   prob:{h:61.7,a:16.6,d:21.7},
+   h2h:[{s:'25/26',r:'BRE 2-1 WOL'},{s:'24/25',r:'BRE 3-1 WOL'},{s:'23/24',r:'BRE 2-1 WOL'}]},
+];
+
+const HISTORY={
+  '2022-23':{champ:'MCI',pts:89,scorer:'E. Haaland (Man City) — 36 ⚽',
+   matches:[
+    {h:'LFC',a:'MUN',s:'7-0',n:'Goleada histórica de Liverpool'},
+    {h:'ARS',a:'MCI',s:'1-3',n:'City toma el liderato en el Emirates'},
+    {h:'MCI',a:'ARS',s:'4-1',n:'City arrolla al Arsenal'},
+    {h:'ARS',a:'TOT',s:'3-1',n:'Derby Norte de Londres'},
+    {h:'MCI',a:'LFC',s:'4-1',n:'Haaland anota hat-trick'},
+   ]},
+  '2023-24':{champ:'MCI',pts:91,scorer:'E. Haaland (Man City) — 27 ⚽',
+   matches:[
+    {h:'ARS',a:'MCI',s:'1-0',n:'Arsenal sorprende al campeón'},
+    {h:'MCI',a:'ARS',s:'3-1',n:'City retoma el liderato'},
+    {h:'LFC',a:'MCI',s:'1-1',n:'Punto clave en la lucha'},
+    {h:'ARS',a:'LFC',s:'3-1',n:'Arsenal se consolida'},
+    {h:'CFC',a:'TOT',s:'4-1',n:'Paliza en el derby del sur'},
+   ]},
+  '2024-25':{champ:'LFC',pts:88,scorer:'M. Salah (Liverpool) — 28 ⚽',
+   matches:[
+    {h:'LFC',a:'MCI',s:'2-0',n:'Liverpool domina la cima'},
+    {h:'ARS',a:'LFC',s:'1-1',n:'Empate en la cumbre'},
+    {h:'LFC',a:'ARS',s:'2-1',n:'Liverpool se escapa'},
+    {h:'MCI',a:'ARS',s:'2-2',n:'City frena al Arsenal'},
+    {h:'MUN',a:'MCI',s:'1-1',n:'Derby de Mánchester sin ganador'},
+   ]},
+  '2025-26':{champ:null,pts:null,scorer:'En progreso…',leader:'ARS',leaderPts:67,
+   matches:RECENT.slice(0,5).map(r=>({h:r.h,a:r.a,s:r.s,n:'Jornada 29 · Mar 2026'}))},
+};
+
+/* ═══════════════════ HELPERS ═══════════════════ */
+const badge=r=>{
+  if(r<=4)  return{col:'#00d4aa',bg:'#00d4aa18',label:'UCL'};
+  if(r<=6)  return{col:'#f0c040',bg:'#f0c04018',label:'UEL'};
+  if(r>=18) return{col:'#ff4455',bg:'#ff445518',label:'▼'};
+  return{col:'transparent',bg:'transparent',label:''};
+};
+const pLabel=p=>({h:'Local',a:'Visita',d:'Empate'}[p]||'—');
+const medal=i=>['🥇','🥈','🥉'][i]||(i+1+'.') ;
+
+/* ═══════════════════ APP ═══════════════════ */
+function App(){
+  const[tab,setTab]=useState('inicio');
+  const[pTab,setPTab]=useState('win');
+  const[histY,setHistY]=useState('2025-26');
+  const[openH2H,setOpenH2H]=useState(null);
+  const[preds,setPreds]=useState({win:{},santi:{},claude:{}});
+  const[cLoad,setCLoad]=useState(false);
+  const[cMsg,setCMsg]=useState('');
+  const[actual,setActual]=useState({});
+
+  const setPick=(who,id,v)=>setPreds(p=>({...p,[who]:{...p[who],[id]:v}}));
+  const toggleActual=(id,v)=>setActual(p=>{
+    if(p[id]===v){const n={...p};delete n[id];return n;}
+    return{...p,[id]:v};
+  });
+
+  const getClaudePicks=async()=>{
+    setCLoad(true);setCMsg('');
+    try{
+      const body={
+        model:'claude-sonnet-4-20250514',max_tokens:600,
+        messages:[{role:'user',content:
+          `Eres analista experto Premier League. Predice jornada 29-30 (14-16 Mar 2026).
+
+Contexto clave: Arsenal lidera con 67 pts (+7 vs Man City). Liverpool cayó ante Wolves 2-1. Chelsea goleó a Aston Villa 4-1. Crystal Palace venció a Tottenham 3-1.
+
+Datos de cada partido (prob. estadísticas):
+${UPCOMING.map(m=>`${m.id}: ${TEAMS[m.h].n} ${m.prob.h}% vs ${TEAMS[m.a].n} ${m.prob.a}% empate ${m.prob.d}%`).join('\n')}
+
+Responde SOLO JSON sin texto ni backticks:
+{"g1":"h","g2":"d","g3":"h",...} (h=local, a=visita, d=empate)`
+        }]
+      };
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(body)
+      });
+      const data=await res.json();
+      const raw=(data.content||[]).map(c=>c.text||'').join('');
+      const clean=raw.replace(/```json|```/g,'').trim();
+      setPreds(p=>({...p,claude:JSON.parse(clean)}));
+      setCMsg('✅ Predicciones de Claude listas');
+    }catch(e){setCMsg('❌ '+e.message);}
+    setCLoad(false);
+  };
+
+  const calcScore=who=>{
+    const p=preds[who];let w=0,tot=0;
+    Object.keys(actual).forEach(id=>{if(p[id]){tot++;if(p[id]===actual[id])w++;}});
+    return{w,tot,pct:tot?Math.round(w/tot*100):0};
+  };
+
+  const T=TEAMS;
+
+  /* ── NAV ── */
+  const nav=[
+    {id:'inicio', icon:'🏠', label:'Inicio'},
+    {id:'results',icon:'📅', label:'Historial'},
+    {id:'fixtures',icon:'🔮',label:'Próximos'},
+    {id:'table',  icon:'📊', label:'Tabla'},
+    {id:'pred',   icon:'🎯', label:'Predictor'},
+  ];
+
+  return(
+  <div style={{fontFamily:"'Rajdhani',sans-serif",background:'#070b16',minHeight:'100vh',color:'#dde8ff'}}>
+
+    {/* ── HEADER ── */}
+    <header style={{
+      background:'linear-gradient(135deg,#0b1828 0%,#060e1c 100%)',
+      borderBottom:'2px solid #00d4aa33',padding:'12px 14px',
+      display:'flex',alignItems:'center',justifyContent:'space-between',
+      position:'sticky',top:0,zIndex:200,
+    }}>
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <div style={{
+          width:42,height:42,borderRadius:10,background:'linear-gradient(135deg,#00d4aa,#0090aa)',
+          display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,fontWeight:900,
+          color:'#070b16',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:-1,flexShrink:0,
+        }}>EPL</div>
+        <div>
+          <div style={{fontSize:19,fontWeight:800,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,lineHeight:1}}>
+            EPL TRACKER <span style={{color:'#00d4aa'}}>CR</span>
+          </div>
+          <div style={{fontSize:10,color:'#8090b0',letterSpacing:2}}>PREMIER LEAGUE 2025–26</div>
+        </div>
+      </div>
+      <div style={{textAlign:'right'}}>
+        <div style={{fontSize:12,fontWeight:700,color:'#00d4aa'}}>Arsenal 🔴</div>
+        <div style={{fontSize:10,color:'#8090b0'}}>Líder · 67 pts</div>
+      </div>
+    </header>
+
+    {/* ── NAV BAR ── */}
+    <nav style={{
+      display:'flex',gap:3,padding:'8px 8px 6px',
+      background:'#0d1220',borderBottom:'1px solid #ffffff0a',
+      overflowX:'auto',position:'sticky',top:67,zIndex:190,
+    }}>
+      {nav.map(n=>(
+        <button key={n.id} onClick={()=>setTab(n.id)} style={{
+          flex:'0 0 auto',display:'flex',flexDirection:'column',alignItems:'center',
+          gap:2,padding:'6px 12px',border:'none',cursor:'pointer',borderRadius:8,
+          background:tab===n.id?'#00d4aa':'transparent',
+          color:tab===n.id?'#070b16':'#6070a0',
+          fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:11,
+          letterSpacing:.5,transition:'all .2s',whiteSpace:'nowrap',
+          borderBottom:tab===n.id?'none':'1px solid transparent',
+        }}>
+          <span style={{fontSize:16}}>{n.icon}</span>
+          {n.label}
+        </button>
+      ))}
+    </nav>
+
+    {/* ── CONTENT ── */}
+    <main style={{padding:'12px 10px',paddingBottom:50,maxWidth:800,margin:'0 auto'}}>
+
+      {/* ════════ INICIO ════════ */}
+      {tab==='inicio'&&<div className="fade">
+        {/* Líder banner */}
+        <div style={{
+          background:'linear-gradient(135deg,#1c0a0a,#2a1010)',
+          border:'1px solid #EF010755',borderRadius:12,padding:'14px 16px',
+          marginBottom:12,display:'flex',justifyContent:'space-between',alignItems:'center',
+        }}>
+          <div>
+            <div style={{fontSize:10,color:'#EF010799',letterSpacing:2,marginBottom:3}}>🏆 LÍDER TEMPORADA 2025-26</div>
+            <div style={{fontSize:24,fontWeight:800,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>
+              Arsenal FC
+            </div>
+            <div style={{fontSize:12,color:'#EF010799',marginTop:2}}>
+              67 pts · JG 30 · +7 sobre Man City
+            </div>
+          </div>
+          <div style={{fontSize:52,lineHeight:1}}>🔴</div>
+        </div>
+
+        {/* Stats row */}
+        {[
+          {label:'Partidos',val:'30',sub:'jugados'},
+          {label:'Victorias',val:'20',sub:'de 30'},
+          {label:'Goles',val:'56',sub:'anotados'},
+        ].map((s,i)=>(
+          <div key={i} style={{display:'inline-block',width:'33%',textAlign:'center',padding:'8px 4px'}}>
+            <div style={{fontSize:26,fontWeight:800,color:'#00d4aa',fontFamily:"'Barlow Condensed',sans-serif"}}>{s.val}</div>
+            <div style={{fontSize:11,color:'#8090b0'}}>{s.label}</div>
+            <div style={{fontSize:10,color:'#6070a0'}}>{s.sub}</div>
+          </div>
+        ))}
+
+        <div style={{fontSize:10,color:'#00d4aa',letterSpacing:2,margin:'12px 0 7px'}}>ÚLTIMOS RESULTADOS · JORNADA 29</div>
+        {RECENT.map((m,i)=>{
+          const[hs,as]=m.s.split('-').map(Number);
+          const hw=hs>as,aw=as>hs,draw=hs===as;
+          return(
+          <div key={i} className="rh" style={{
+            display:'flex',alignItems:'center',
+            background:i%2===0?'#0d1220':'#0a101c',
+            border:'1px solid #ffffff08',borderRadius:8,marginBottom:3,padding:'8px 10px',gap:6,
+          }}>
+            <span style={{fontSize:10,color:'#6070a0',width:56,flexShrink:0}}>{m.d}</span>
+            <span style={{flex:1,textAlign:'right',fontWeight:hw?700:500,
+              color:hw?'#fff':'#6070a0',fontSize:13}}>{T[m.h].n}</span>
+            <div style={{
+              padding:'3px 10px',background:'#151d2e',borderRadius:6,
+              fontWeight:700,fontSize:14,color:'#fff',minWidth:52,textAlign:'center',
+              border:'1px solid #ffffff18',flexShrink:0,
+            }}>{m.s}</div>
+            <span style={{flex:1,textAlign:'left',fontWeight:aw?700:500,
+              color:aw?'#fff':'#6070a0',fontSize:13}}>{T[m.a].n}</span>
+            <div style={{
+              width:18,height:18,borderRadius:'50%',flexShrink:0,
+              background:hw?T[m.h].c:aw?T[m.a].c:'#f0c040',
+              display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff',fontWeight:700,
+            }}>{hw?'L':aw?'V':'E'}</div>
+          </div>
+          );
+        })}
+      </div>}
+
+      {/* ════════ HISTORIAL ════════ */}
+      {tab==='results'&&<div className="fade">
+        <div style={{display:'flex',gap:5,marginBottom:12,flexWrap:'wrap'}}>
+          {Object.keys(HISTORY).map(y=>(
+            <button key={y} onClick={()=>setHistY(y)} style={{
+              padding:'6px 14px',border:'none',cursor:'pointer',borderRadius:8,
+              background:histY===y?'#00d4aa':'#0d1220',
+              color:histY===y?'#070b16':'#6070a0',
+              fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:13,
+              border:`1px solid ${histY===y?'transparent':'#ffffff15'}`,transition:'all .2s',
+            }}>{y}</button>
+          ))}
+        </div>
+
+        {(()=>{const h=HISTORY[histY];const isCurrent=histY==='2025-26';return(
+          <div>
+            <div style={{
+              background:isCurrent?'linear-gradient(135deg,#0a1628,#071022)':'linear-gradient(135deg,#1a1400,#2a1e00)',
+              border:`1px solid ${isCurrent?'#00d4aa44':'#f0c04044'}`,
+              borderRadius:12,padding:'14px 16px',marginBottom:12,
+            }}>
+              {isCurrent?(
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <div>
+                    <div style={{fontSize:10,color:'#8090b0',letterSpacing:2,marginBottom:4}}>⚽ TEMPORADA EN CURSO</div>
+                    <div style={{fontSize:22,fontWeight:800,color:'#00d4aa',fontFamily:"'Barlow Condensed',sans-serif"}}>
+                      Arsenal lidera</div>
+                    <div style={{fontSize:12,color:'#00d4aa99'}}>{h.leaderPts} pts · Jornada 30/38</div>
+                  </div>
+                  <div style={{fontSize:42}}>📊</div>
+                </div>
+              ):(
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <div>
+                    <div style={{fontSize:10,color:'#f0c04099',letterSpacing:2,marginBottom:4}}>🏆 CAMPEÓN</div>
+                    <div style={{fontSize:22,fontWeight:800,color:'#f0c040',fontFamily:"'Barlow Condensed',sans-serif"}}>
+                      {T[h.champ].n}</div>
+                    <div style={{fontSize:12,color:'#f0c04099'}}>{h.pts} pts · {h.scorer}</div>
+                  </div>
+                  <div style={{fontSize:42}}>🏆</div>
+                </div>
+              )}
+            </div>
+
+            <div style={{fontSize:10,color:'#00d4aa',letterSpacing:2,marginBottom:8}}>PARTIDOS DESTACADOS</div>
+            {h.matches.map((m,i)=>{
+              const[hs,as]=m.s.split('-').map(Number);
+              const hw=hs>as,aw=as>hs;
+              return(
+              <div key={i} style={{
+                background:'#0d1220',border:'1px solid #ffffff08',
+                borderRadius:9,marginBottom:5,padding:'10px 14px',
+              }}>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:5}}>
+                  <span style={{flex:1,textAlign:'right',fontWeight:hw?700:500,
+                    fontSize:14,color:hw?'#fff':'#6070a0'}}>{T[m.h]?.n||m.h}</span>
+                  <div style={{
+                    padding:'3px 12px',background:'#151d2e',borderRadius:7,
+                    fontWeight:700,fontSize:15,color:'#fff',border:'1px solid #ffffff18',minWidth:56,textAlign:'center',
+                  }}>{m.s}</div>
+                  <span style={{flex:1,textAlign:'left',fontWeight:aw?700:500,
+                    fontSize:14,color:aw?'#fff':'#6070a0'}}>{T[m.a]?.n||m.a}</span>
+                </div>
+                <div style={{textAlign:'center',fontSize:11,color:'#6070a0',fontStyle:'italic'}}>{m.n}</div>
+              </div>
+              );
+            })}
+          </div>
+        );})()}
+      </div>}
+
+      {/* ════════ PRÓXIMOS ════════ */}
+      {tab==='fixtures'&&<div className="fade">
+        <div style={{fontSize:10,color:'#00d4aa',letterSpacing:2,marginBottom:10}}>
+          JORNADA 29-30 · 14-16 MAR 2026 · HORA COSTA RICA
+        </div>
+        {UPCOMING.map(m=>{
+          const isOpen=openH2H===m.id;
+          const maxP=Math.max(m.prob.h,m.prob.a,m.prob.d);
+          const winner=m.prob.h===maxP?T[m.h].n:m.prob.a===maxP?T[m.a].n:'Empate';
+          return(
+          <div key={m.id} style={{
+            background:'#0d1220',border:'1px solid #ffffff0a',
+            borderRadius:11,marginBottom:8,overflow:'hidden',
+          }}>
+            <div style={{padding:'10px 12px'}}>
+              {/* Fecha y H2H toggle */}
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                <span style={{fontSize:11,color:'#6070a0',fontWeight:600}}>
+                  {m.date} · {m.time} CR
+                </span>
+                <button onClick={()=>setOpenH2H(isOpen?null:m.id)} style={{
+                  background:'transparent',border:'1px solid #ffffff15',
+                  color:'#6070a0',borderRadius:5,padding:'2px 9px',
+                  cursor:'pointer',fontSize:11,fontFamily:"'Rajdhani',sans-serif",fontWeight:700,
+                }}>H2H {isOpen?'▲':'▼'}</button>
+              </div>
+
+              {/* Equipos */}
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+                <div style={{flex:1,textAlign:'right'}}>
+                  <div style={{
+                    fontWeight:700,fontSize:15,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:.5,
+                    color:m.prob.h===maxP?'#fff':'#6070a0',
+                  }}>{T[m.h].n}</div>
+                  <div style={{fontSize:10,color:'#6070a0'}}>🏠 Local</div>
+                </div>
+                <div style={{
+                  padding:'5px 10px',background:'#151d2e',borderRadius:8,
+                  fontWeight:800,fontSize:13,color:'#8090b0',
+                  border:'1px solid #ffffff15',flexShrink:0,
+                  fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,
+                }}>VS</div>
+                <div style={{flex:1,textAlign:'left'}}>
+                  <div style={{
+                    fontWeight:700,fontSize:15,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:.5,
+                    color:m.prob.a===maxP?'#fff':'#6070a0',
+                  }}>{T[m.a].n}</div>
+                  <div style={{fontSize:10,color:'#6070a0'}}>✈️ Visita</div>
+                </div>
+              </div>
+
+              {/* Barras de probabilidad */}
+              <div style={{fontSize:10,color:'#6070a0',letterSpacing:1.5,marginBottom:6}}>PROBABILIDAD</div>
+              {[
+                {label:T[m.h].n,val:m.prob.h,col:T[m.h].c},
+                {label:'Empate',val:m.prob.d,col:'#f0c040'},
+                {label:T[m.a].n,val:m.prob.a,col:T[m.a].c},
+              ].map((p,j)=>(
+                <div key={j} style={{marginBottom:5}}>
+                  <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:2}}>
+                    <span style={{color:p.val===maxP?'#dde8ff':'#6070a0'}}>{p.label}</span>
+                    <span style={{fontWeight:700,color:p.val===maxP?'#fff':'#6070a0'}}>{p.val}%</span>
+                  </div>
+                  <div style={{height:6,background:'#1a2236',borderRadius:3,overflow:'hidden'}}>
+                    <div style={{
+                      height:'100%',width:`${p.val}%`,
+                      background:p.val===maxP?p.col:p.col+'66',
+                      borderRadius:3,transition:'width .7s ease',
+                    }}/>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{
+                marginTop:8,fontSize:11,color:'#6070a0',textAlign:'center',
+                background:'#151d2e',padding:'5px',borderRadius:6,
+              }}>
+                📈 Favorito: <strong style={{color:'#00d4aa'}}>{winner}</strong> ({maxP}%)
+              </div>
+            </div>
+
+            {/* H2H drawer */}
+            {isOpen&&(
+            <div style={{background:'#080d18',borderTop:'1px solid #ffffff0a',padding:'10px 14px'}}>
+              <div style={{fontSize:10,color:'#00d4aa',letterSpacing:2,marginBottom:8}}>
+                HISTORIAL DE ENFRENTAMIENTOS</div>
+              {m.h2h.map((hh,j)=>(
+                <div key={j} style={{
+                  display:'flex',gap:10,marginBottom:5,fontSize:12,
+                  padding:'5px 8px',background:'#0d1220',borderRadius:6,
+                }}>
+                  <span style={{
+                    color:'#8090b0',width:42,flexShrink:0,fontWeight:600,
+                    background:'#151d2e',borderRadius:4,padding:'1px 5px',textAlign:'center',
+                  }}>{hh.s}</span>
+                  <span style={{color:'#dde8ff'}}>{hh.r}</span>
+                </div>
+              ))}
+            </div>
+            )}
+          </div>
+          );
+        })}
+      </div>}
+
+      {/* ════════ TABLA ════════ */}
+      {tab==='table'&&<div className="fade">
+        <div style={{
+          background:'#0d1220',borderRadius:11,overflow:'hidden',
+          border:'1px solid #ffffff0a',
+        }}>
+          {/* Header */}
+          <div style={{
+            display:'grid',gridTemplateColumns:'30px 6px 1fr 36px 28px 28px 28px 36px',
+            gap:3,padding:'8px 10px',background:'#111826',
+            fontSize:10,color:'#6070a0',letterSpacing:.5,fontWeight:700,
+          }}>
+            <span>#</span><span/>
+            <span>EQUIPO</span>
+            <span style={{textAlign:'center'}}>PJ</span>
+            <span style={{textAlign:'center'}}>G</span>
+            <span style={{textAlign:'center'}}>E</span>
+            <span style={{textAlign:'center'}}>P</span>
+            <span style={{textAlign:'right',color:'#00d4aa'}}>PTS</span>
+          </div>
+
+          {STANDINGS.map((s,i)=>{
+            const b=badge(s.r);
+            return(
+            <div key={i} className="rh" style={{
+              display:'grid',gridTemplateColumns:'30px 6px 1fr 36px 28px 28px 28px 36px',
+              gap:3,padding:'7px 10px',alignItems:'center',fontSize:13,
+              background:i%2===0?'#0d1220':'#0a101c',
+              borderLeft:`3px solid ${b.col!=='transparent'?b.col:'transparent'}`,
+            }}>
+              <span style={{fontWeight:700,
+                color:s.r<=4?'#00d4aa':s.r>=18?'#ff4455':'#6070a0',
+                fontSize:12}}>{s.r}</span>
+              <div style={{width:6,height:22,borderRadius:2,background:TEAMS[s.a].c}}/>
+              <span style={{fontWeight:600,fontSize:13}}>{TEAMS[s.a].n}</span>
+              <span style={{textAlign:'center',color:'#6070a0',fontSize:12}}>{s.gp}</span>
+              <span style={{textAlign:'center',color:'#6070a0',fontSize:12}}>{s.w}</span>
+              <span style={{textAlign:'center',color:'#6070a0',fontSize:12}}>{s.d}</span>
+              <span style={{textAlign:'center',color:'#6070a0',fontSize:12}}>{s.l}</span>
+              <span style={{textAlign:'right',fontWeight:800,fontSize:15,
+                color:s.r===1?'#f0c040':s.r<=4?'#00d4aa':'#dde8ff'}}>{s.pts}</span>
+            </div>
+            );
+          })}
+        </div>
+
+        {/* Leyenda */}
+        <div style={{display:'flex',gap:14,marginTop:10,fontSize:11,color:'#6070a0',
+          padding:'0 4px',flexWrap:'wrap'}}>
+          {[['#00d4aa','Champions League'],['#f0c040','Europa League'],['#ff4455','Descenso']].map(([c,l])=>(
+            <div key={l} style={{display:'flex',alignItems:'center',gap:5}}>
+              <div style={{width:8,height:8,borderRadius:2,background:c}}/>
+              <span>{l}</span>
+            </div>
+          ))}
+        </div>
+      </div>}
+
+      {/* ════════ PREDICTOR ════════ */}
+      {tab==='pred'&&<div className="fade">
+
+        {/* Sub-nav */}
+        <div style={{
+          display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',
+          gap:3,background:'#0d1220',padding:5,borderRadius:10,
+          border:'1px solid #ffffff0a',marginBottom:12,
+        }}>
+          {[
+            {id:'win',   icon:'⚽', label:'Win'},
+            {id:'santi', icon:'🎯', label:'Santi'},
+            {id:'claude',icon:'🤖', label:'Claude'},
+            {id:'board', icon:'🏅', label:'Marcador'},
+          ].map(pt=>(
+            <button key={pt.id} onClick={()=>setPTab(pt.id)} style={{
+              padding:'8px 4px',border:'none',cursor:'pointer',borderRadius:7,
+              background:pTab===pt.id?'#00d4aa':'transparent',
+              color:pTab===pt.id?'#070b16':'#6070a0',
+              fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:12,
+              transition:'all .2s',display:'flex',flexDirection:'column',
+              alignItems:'center',gap:2,
+            }}>
+              <span style={{fontSize:17}}>{pt.icon}</span>
+              {pt.label}
+            </button>
+          ))}
+        </div>
+
+        {/* WIN / SANTI */}
+        {(pTab==='win'||pTab==='santi')&&(()=>{
+          const who=pTab;
+          const myPicks=preds[who];
+          const correct=Object.keys(actual).filter(id=>myPicks[id]&&myPicks[id]===actual[id]).length;
+          const done=Object.keys(myPicks).length;
+          return(
+          <div>
+            <div style={{
+              background:'linear-gradient(135deg,#0a1628,#071022)',
+              border:'1px solid #00d4aa33',borderRadius:10,
+              padding:'12px 14px',marginBottom:12,
+              display:'flex',justifyContent:'space-between',alignItems:'center',
+            }}>
+              <div>
+                <div style={{fontSize:10,color:'#6070a0',letterSpacing:2}}>
+                  PREDICCIONES DE {who.toUpperCase()}</div>
+                <div style={{fontSize:20,fontWeight:800,color:'#00d4aa',
+                  fontFamily:"'Barlow Condensed',sans-serif",marginTop:2}}>
+                  {done} / {UPCOMING.length} elegidas</div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:10,color:'#6070a0'}}>Acertadas</div>
+                <div style={{fontSize:26,fontWeight:800,color:'#f0c040',
+                  fontFamily:"'Barlow Condensed',sans-serif"}}>{correct}</div>
+              </div>
+            </div>
+
+            {UPCOMING.map(m=>{
+              const pick=myPicks[m.id];
+              const res=actual[m.id];
+              const ok=res&&pick&&res===pick;
+              const fail=res&&pick&&res!==pick;
+              return(
+              <div key={m.id} style={{
+                background:'#0d1220',
+                border:`1px solid ${ok?'#00d4aa44':fail?'#ff445533':'#ffffff0a'}`,
+                borderRadius:10,marginBottom:6,padding:'10px 12px',
+              }}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:7}}>
+                  <div style={{flex:1}}>
+                    <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[m.h].n}</span>
+                    <span style={{fontSize:11,color:'#6070a0',margin:'0 6px'}}>vs</span>
+                    <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[m.a].n}</span>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:5}}>
+                    <span style={{fontSize:10,color:'#6070a0'}}>{m.date}</span>
+                    {res&&<span style={{fontSize:16}}>{ok?'✅':'❌'}</span>}
+                  </div>
+                </div>
+
+                <div style={{display:'flex',gap:5}}>
+                  {[
+                    {v:'h',label:T[m.h].n.split(' ')[0],col:T[m.h].c},
+                    {v:'d',label:'Empate',col:'#f0c040'},
+                    {v:'a',label:T[m.a].n.split(' ')[0],col:T[m.a].c},
+                  ].map(btn=>(
+                    <button key={btn.v} className="pb" onClick={()=>setPick(who,m.id,btn.v)} style={{
+                      flex:1,
+                      background:pick===btn.v?btn.col+'33':'#151d2e',
+                      color:pick===btn.v?'#fff':'#6070a0',
+                      border:`1px solid ${pick===btn.v?btn.col+'88':'#ffffff18'}`,
+                      fontWeight:pick===btn.v?700:500,fontSize:11,padding:'6px 4px',
+                      textAlign:'center',
+                    }}>{btn.label}</button>
+                  ))}
+                </div>
+
+                {res&&(
+                  <div style={{fontSize:11,color:'#6070a0',marginTop:6,textAlign:'center'}}>
+                    Resultado: <strong style={{color:'#dde8ff'}}>{pLabel(res)}</strong>
+                    {' · '}Pick: <strong style={{color:ok?'#00d4aa':'#ff4455'}}>
+                      {pLabel(pick)||'Sin pick'}</strong>
+                  </div>
+                )}
+              </div>
+              );
+            })}
+          </div>
+          );
+        })()}
+
+        {/* CLAUDE */}
+        {pTab==='claude'&&(
+          <div>
+            <div style={{
+              background:'linear-gradient(135deg,#071828,#040e1a)',
+              border:'1px solid #00d4aa33',borderRadius:10,padding:'14px',marginBottom:12,
+            }}>
+              <div style={{fontSize:10,color:'#6070a0',letterSpacing:2,marginBottom:6}}>
+                🤖 ANÁLISIS DE CLAUDE IA</div>
+              <p style={{fontSize:13,color:'#8090b0',lineHeight:1.6,marginBottom:12}}>
+                Claude analiza probabilidades estadísticas, forma reciente y Head-to-Head
+                para predecir los resultados de esta jornada.
+              </p>
+              <button onClick={getClaudePicks} disabled={cLoad} style={{
+                width:'100%',
+                background:cLoad?'#151d2e':'linear-gradient(135deg,#00d4aa,#0090aa)',
+                color:cLoad?'#6070a0':'#070b16',
+                border:'none',borderRadius:9,padding:'11px',
+                cursor:cLoad?'default':'pointer',
+                fontFamily:"'Barlow Condensed',sans-serif",
+                fontWeight:700,fontSize:16,letterSpacing:1,
+                display:'flex',alignItems:'center',justifyContent:'center',gap:8,
+                transition:'all .2s',
+              }}>
+                {cLoad
+                  ?<><span style={{animation:'shimmer 1s infinite'}}>⏳</span> ANALIZANDO PARTIDOS...</>
+                  :<><span>🤖</span> OBTENER PREDICCIONES DE CLAUDE</>
+                }
+              </button>
+              {cMsg&&<div style={{
+                marginTop:8,fontSize:12,textAlign:'center',
+                color:cMsg.includes('✅')?'#00d4aa':'#ff4455',
+              }}>{cMsg}</div>}
+            </div>
+
+            {UPCOMING.map(m=>{
+              const pick=preds.claude[m.id];
+              const res=actual[m.id];
+              const ok=res&&pick&&res===pick;
+              const fail=res&&pick&&res!==pick;
+              const maxP=Math.max(m.prob.h,m.prob.a,m.prob.d);
+              return(
+              <div key={m.id} style={{
+                background:'#0d1220',
+                border:`1px solid ${ok?'#00d4aa44':fail?'#ff445533':'#ffffff0a'}`,
+                borderRadius:10,marginBottom:6,padding:'10px 12px',
+              }}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                  <span style={{fontSize:13}}>
+                    <strong style={{color:'#fff'}}>{T[m.h].n}</strong>
+                    <span style={{color:'#6070a0',margin:'0 5px'}}>vs</span>
+                    <strong style={{color:'#fff'}}>{T[m.a].n}</strong>
+                  </span>
+                  {res&&<span style={{fontSize:16}}>{ok?'✅':'❌'}</span>}
+                </div>
+                <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                  <div style={{
+                    padding:'6px 14px',borderRadius:8,fontSize:12,fontWeight:700,
+                    background:pick?({h:T[m.h].c,a:T[m.a].c,d:'#f0c040'}[pick]||'#151d2e')+'33':'#151d2e',
+                    border:`1px solid ${pick?({h:T[m.h].c,a:T[m.a].c,d:'#f0c040'}[pick]||'#fff')+'55':'#ffffff18'}`,
+                    color:pick?'#fff':'#6070a0',
+                  }}>
+                    {pick
+                      ?{h:`🏠 ${T[m.h].n}`,a:`✈️ ${T[m.a].n}`,d:'🤝 Empate'}[pick]
+                      :'— Sin analizar aún —'}
+                  </div>
+                  <div style={{fontSize:11,color:'#6070a0'}}>
+                    Estadística: {maxP}%
+                  </div>
+                </div>
+                {res&&(
+                  <div style={{fontSize:11,color:'#6070a0',marginTop:6}}>
+                    Resultado real: <strong style={{color:'#dde8ff'}}>{pLabel(res)}</strong>
+                    {' · '}Claude: <strong style={{color:ok?'#00d4aa':'#ff4455'}}>{pLabel(pick)||'N/A'}</strong>
+                  </div>
+                )}
+              </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* MARCADOR */}
+        {pTab==='board'&&(()=>{
+          const sc={win:calcScore('win'),santi:calcScore('santi'),claude:calcScore('claude')};
+          const ranked=Object.entries(sc).sort((a,b)=>b[1].pct-a[1].pct);
+          const META={
+            win:  {label:'Win',   icon:'⚽',col:'#EF0107'},
+            santi:{label:'Santi', icon:'🎯',col:'#6CABDD'},
+            claude:{label:'Claude IA',icon:'🤖',col:'#00d4aa'},
+          };
+          return(
+          <div>
+            {/* Ingresar resultados reales */}
+            <div style={{fontSize:10,color:'#00d4aa',letterSpacing:2,marginBottom:8}}>
+              INGRESAR RESULTADOS REALES</div>
+            {UPCOMING.map(m=>(
+              <div key={m.id} style={{
+                background:'#0d1220',border:'1px solid #ffffff0a',
+                borderRadius:9,marginBottom:5,padding:'9px 12px',
+              }}>
+                <div style={{fontSize:12,color:'#6070a0',marginBottom:6}}>
+                  {m.date} ·{' '}
+                  <strong style={{color:'#dde8ff'}}>{T[m.h].n}</strong>
+                  {' vs '}
+                  <strong style={{color:'#dde8ff'}}>{T[m.a].n}</strong>
+                </div>
+                <div style={{display:'flex',gap:5}}>
+                  {[{v:'h',label:'🏠 Local'},{v:'d',label:'🤝 Empate'},{v:'a',label:'✈️ Visita'}].map(btn=>(
+                    <button key={btn.v} className="pb" onClick={()=>toggleActual(m.id,btn.v)} style={{
+                      flex:1,
+                      background:actual[m.id]===btn.v?'#00d4aa22':'#151d2e',
+                      color:actual[m.id]===btn.v?'#00d4aa':'#6070a0',
+                      border:`1px solid ${actual[m.id]===btn.v?'#00d4aa55':'#ffffff18'}`,
+                      fontWeight:actual[m.id]===btn.v?700:500,
+                      fontSize:11,padding:'6px 3px',
+                    }}>{btn.label}</button>
+                  ))}
+                  {actual[m.id]&&(
+                    <button className="pb" onClick={()=>toggleActual(m.id,actual[m.id])} style={{
+                      background:'#ff445518',color:'#ff4455',
+                      border:'1px solid #ff445540',padding:'6px 8px',fontSize:12,
+                    }}>✕</button>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* Tabla de líderes */}
+            <div style={{fontSize:10,color:'#f0c040',letterSpacing:2,margin:'16px 0 10px'}}>
+              🏅 TABLA DE ACIERTOS</div>
+
+            {ranked.map(([name,s],i)=>{
+              const m=META[name];
+              return(
+              <div key={name} style={{
+                background:i===0?'linear-gradient(135deg,#1a1400,#2a1e00)':'#0d1220',
+                border:`1px solid ${i===0?'#f0c04055':'#ffffff0a'}`,
+                borderRadius:11,marginBottom:7,padding:'14px 16px',
+                display:'flex',alignItems:'center',gap:12,
+              }}>
+                <div style={{fontSize:28,lineHeight:1}}>{medal(i)}</div>
+                <div style={{width:4,height:44,borderRadius:2,background:m.col,flexShrink:0}}/>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700,fontSize:17,
+                    color:i===0?'#f0c040':'#dde8ff',
+                    fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:.5}}>
+                    {m.icon} {m.label}</div>
+                  <div style={{fontSize:12,color:'#6070a0',marginTop:2}}>
+                    {s.w} acertadas de {s.tot} resultados ingresados</div>
+                </div>
+                <div style={{textAlign:'center'}}>
+                  <div style={{
+                    fontSize:32,fontWeight:800,lineHeight:1,
+                    color:i===0?'#f0c040':m.col,
+                    fontFamily:"'Barlow Condensed',sans-serif",
+                  }}>{s.pct}%</div>
+                  <div style={{fontSize:10,color:'#6070a0'}}>precisión</div>
+                </div>
+              </div>
+              );
+            })}
+
+            {Object.keys(actual).length===0&&(
+              <div style={{
+                textAlign:'center',color:'#6070a0',fontSize:13,marginTop:6,
+                padding:'24px',background:'#0d1220',borderRadius:10,border:'1px solid #ffffff0a',
+                lineHeight:1.6,
+              }}>
+                ☝️ Primero asegúrate de que Win, Santi y Claude hagan sus picks en sus tabs.<br/>
+                Luego ingresa los resultados reales aquí para calcular quién acierta más.
+              </div>
+            )}
+          </div>
+          );
+        })()}
+
+      </div>}
+
+    </main>
+
+    {/* ── FOOTER ── */}
+    <footer style={{
+      textAlign:'center',padding:'12px',
+      borderTop:'1px solid #ffffff08',
+      fontSize:10,color:'#4050700',color:'#405070',letterSpacing:1,
+    }}>
+      EPL TRACKER CR · github.com/winreds · {new Date().getFullYear()}
+    </footer>
+
+  </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
