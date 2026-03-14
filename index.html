@@ -188,23 +188,51 @@ const SCORERS_DATA={
   },
   '2025-26':{
     scorers:[
-      {name:'M. Salah',team:'LFC',goals:18,nat:'🇪🇬'},{name:'B. Saka',team:'ARS',goals:16,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'A. Isak',team:'NEW',goals:15,nat:'🇸🇪'},{name:'E. Haaland',team:'MCI',goals:14,nat:'🇳🇴'},
-      {name:'C. Palmer',team:'CFC',goals:13,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'O. Watkins',team:'AVL',goals:12,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'J. Pedro',team:'BRI',goals:11,nat:'🇧🇷'},{name:'K. Havertz',team:'ARS',goals:10,nat:'🇩🇪'},
-      {name:'D. Núñez',team:'LFC',goals:10,nat:'🇺🇾'},{name:'B. Mbeumo',team:'BRE',goals:9,nat:'🇨🇲'},
+      {name:'E. Haaland',team:'MCI',goals:17,nat:'🇳🇴',note:'16 PJ'},{name:'I. Thiago',team:'BRE',goals:11,nat:'🇧🇷'},
+      {name:'J.P. Mateta',team:'CRY',goals:7,nat:'🇫🇷'},{name:'D. Welbeck',team:'BRI',goals:7,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'H. Ekitike',team:'LFC',goals:7,nat:'🇫🇷'},{name:'P. Foden',team:'MCI',goals:7,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'Richarlison',team:'TOT',goals:6,nat:'🇧🇷'},{name:'B. Mbeumo',team:'MUN',goals:6,nat:'🇨🇲'},
+      {name:'A. Semenyo',team:'BOU',goals:6,nat:'🇬🇭'},{name:'J. Bowen',team:'WHU',goals:5,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
     ],
     assists:[
-      {name:'M. Salah',team:'LFC',ast:14,nat:'🇪🇬'},{name:'B. Saka',team:'ARS',ast:12,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'K. De Bruyne',team:'MCI',ast:11,nat:'🇧🇪'},{name:'C. Palmer',team:'CFC',ast:9,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'T. Alexander-Arnold',team:'LFC',ast:8,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'O. Watkins',team:'AVL',ast:7,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'A. Isak',team:'NEW',ast:6,nat:'🇸🇪'},{name:'J. Pedro',team:'BRI',ast:8,nat:'🇧🇷'},
-      {name:'P. Foden',team:'MCI',ast:7,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'M. Ødegaard',team:'ARS',ast:9,nat:'🇳🇴'},
+      {name:'B. Fernandes',team:'MUN',ast:14,nat:'🇵🇹'},{name:'M. Ødegaard',team:'ARS',ast:10,nat:'🇳🇴'},
+      {name:'P. Foden',team:'MCI',ast:9,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'M. Salah',team:'LFC',ast:8,nat:'🇪🇬'},
+      {name:'B. Saka',team:'ARS',ast:8,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'M. Rogers',team:'AVL',ast:7,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'E. Haaland',team:'MCI',ast:6,nat:'🇳🇴'},{name:'C. Palmer',team:'CFC',ast:6,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'B. Guimarães',team:'NEW',ast:5,nat:'🇧🇷'},{name:'I. Thiago',team:'BRE',ast:5,nat:'🇧🇷'},
     ],
   },
 };
 
-/* ═══════════════════ BETTING ODDS ═══════════════════ */
+/* Claude's pre-filled analysis picks for jornada 29-30 (14-16 Mar 2026)
+   Based on: probabilities, H2H, form, context (Liverpool lost to Wolves, Chelsea beat Villa 4-1) */
+const CLAUDE_DEFAULT_PICKS={
+  g1:'a',  /* BUR vs BOU — BOU favorito 52.3%, ganó 3 de últimos 3 H2H */
+  g2:'d',  /* SUN vs BRI — Brighton 44.2% pero SUN en casa, empate plausible 28.6% */
+  g3:'h',  /* ARS vs EVE — Arsenal 69.5%, aplasta a Everton históricamente */
+  g4:'h',  /* CFC vs NEW — Chelsea 52.1% en casa, recuperados tras ganar 4-1 a Villa */
+  g5:'a',  /* WHU vs MCI — Man City 56.3%, WHU en zona de descenso */
+  g6:'h',  /* CRY vs LEE — Crystal Palace 38%, ganó a Tottenham 3-1, buena racha */
+  g7:'h',  /* MUN vs AVL — Man Utd 55.7% en casa, necesita puntos */
+  g8:'h',  /* NFO vs FUL — Nott'm F. 42.2%, juega en casa */
+  g9:'h',  /* LFC vs TOT — Liverpool 74.9%, Tottenham en caída libre */
+  g10:'h', /* BRE vs WOL — Brentford 61.7%, Wolves último en la tabla */
+};
+
+/* Per-user localStorage helpers — each user has their OWN key so picks NEVER mix */
+const PICKS_KEY=uid=>`eplcr_picks_${uid}`;
+const loadPicks=uid=>{
+  try{
+    const raw=localStorage.getItem(PICKS_KEY(uid));
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  /* Default: Claude gets pre-filled, others start empty */
+  if(uid==='claude') return{...CLAUDE_DEFAULT_PICKS};
+  return {};
+};
+const savePicks=(uid,picks)=>{
+  try{localStorage.setItem(PICKS_KEY(uid),JSON.stringify(picks));}catch(e){}
+};
 const BETTING=[
   {id:'g1',h:'BUR',a:'BOU',
    books:[
@@ -446,14 +474,14 @@ function TeamDetail({code,onClose}){
   );
 }
 
-/* ═══════════════════ PICKS PANEL (reusable for Win/Santi/Claude) ═══════════════════ */
-function PicksPanel({who,user,preds,setPreds,actual,scores}){
-  const mp=preds[who]||{};
-  const cor=Object.keys(actual).filter(id=>mp[id]&&mp[id]===actual[id]).length;
-  const done=Object.keys(mp).length;
+/* ═══════════════════ PICKS PANEL (reusable for Win/Santi) ═══════════════════ */
+function PicksPanel({who,user,picks,setMyPicks,actual,scores}){
+  /* picks = only THIS user's picks object e.g. {g1:'h', g2:'a', ...} */
   const m=UM[who];
   const isMe=who===user.id;
   const canPick=isMe&&who!=='claude';
+  const cor=Object.keys(actual).filter(id=>picks[id]&&picks[id]===actual[id]).length;
+  const done=Object.keys(picks).length;
 
   return(<div>
     {/* Header stats */}
@@ -473,7 +501,7 @@ function PicksPanel({who,user,preds,setPreds,actual,scores}){
       👁️ Viendo picks de <strong style={{color:m.c}}>{m.l}</strong> — solo lectura
     </div>}
     {UPCOMING.map(g=>{
-      const pick=mp[g.id];const res=actual[g.id];
+      const pick=picks[g.id];const res=actual[g.id];
       const ok=res&&pick&&res===pick;const fail=res&&pick&&res!==pick;
       const sc=scores[g.id]||{hs:'',as:''};
       const hasScore=sc.hs!==''&&sc.as!=='';
@@ -496,7 +524,7 @@ function PicksPanel({who,user,preds,setPreds,actual,scores}){
         {/* Pick buttons */}
         <div style={{display:'flex',gap:4}}>
           {[{v:'h',l:T[g.h].n.split(' ')[0],c:T[g.h].c},{v:'d',l:'Empate',c:'#f0c040'},{v:'a',l:T[g.a].n.split(' ')[0],c:T[g.a].c}].map(btn=>(
-            <button key={btn.v} className="pb" onClick={()=>canPick&&setPreds(p=>({...p,[who]:{...(p[who]||{}),[g.id]:btn.v}}))}
+            <button key={btn.v} className="pb" onClick={()=>canPick&&setMyPicks(p=>({...p,[g.id]:btn.v}))}
               style={{flex:1,background:pick===btn.v?btn.c+'33':'#151d2e',color:pick===btn.v?'#fff':'#6070a0',border:`1px solid ${pick===btn.v?btn.c+'88':'#ffffff15'}`,fontWeight:pick===btn.v?700:500,fontSize:11,padding:'6px 3px',cursor:canPick?'pointer':'default'}}>{btn.l}</button>
           ))}
         </div>
@@ -517,7 +545,10 @@ function MainApp({user,onLogout}){
   const[pTab,setPTab]=useState(()=>(['win','santi'].includes(user.id)?user.id:'win'));
   const[histY,setHistY]=useState('2025-26');
   const[oh2h,setOh2h]=useState(null);
-  const[preds,setPreds]=useState(()=>{try{return JSON.parse(localStorage.getItem('eplcr_preds')||'{}')}catch(e){return{}}});
+  /* ── Per-user picks — each stored independently so Win/Santi/Claude NEVER share picks ── */
+  const[picksWin,  setPicksWin  ]=useState(()=>loadPicks('win'));
+  const[picksSanti,setPicksSanti]=useState(()=>loadPicks('santi'));
+  const[picksClaude,setPicksClaude]=useState(()=>loadPicks('claude'));
   const[scores,setScores]=useState(()=>{try{return JSON.parse(localStorage.getItem('eplcr_scores')||'{}')}catch(e){return{}}});
   const[cLoad,setCLoad]=useState(false);const[cMsg,setCMsg]=useState('');
   const[adminOpen,setAdminOpen]=useState(false);const[menuOpen,setMenuOpen]=useState(false);
@@ -526,8 +557,20 @@ function MainApp({user,onLogout}){
   const[scorerView,setScorerView]=useState('scorers');
   const[bettingOpen,setBettingOpen]=useState(null);
 
-  useEffect(()=>{localStorage.setItem('eplcr_preds',JSON.stringify(preds));},[preds]);
+  useEffect(()=>{savePicks('win',picksWin);},[picksWin]);
+  useEffect(()=>{savePicks('santi',picksSanti);},[picksSanti]);
+  useEffect(()=>{savePicks('claude',picksClaude);},[picksClaude]);
   useEffect(()=>{localStorage.setItem('eplcr_scores',JSON.stringify(scores));},[scores]);
+
+  /* Build unified preds object for display & scoring */
+  const preds=useMemo(()=>({win:picksWin,santi:picksSanti,claude:picksClaude}),[picksWin,picksSanti,picksClaude]);
+
+  /* Setter that routes to the correct state based on who */
+  const setPreds=(who,updater)=>{
+    if(who==='win')   setPicksWin(updater);
+    else if(who==='santi') setPicksSanti(updater);
+    else if(who==='claude') setPicksClaude(updater);
+  };
 
   /* Derive actual results automatically from scores */
   const actual=useMemo(()=>{
@@ -905,9 +948,16 @@ SOLO JSON sin texto: {"g1":"h","g2":"d",...} h=local a=visita d=empate`}]})});
             </button>))}
         </div>
 
-        {/* WIN / SANTI — uses shared PicksPanel */}
+        {/* WIN / SANTI — independent picks, NEVER shared */}
         {(pTab==='win'||pTab==='santi')&&(
-          <PicksPanel who={pTab} user={user} preds={preds} setPreds={setPreds} actual={actual} scores={scores}/>
+          <PicksPanel
+            who={pTab}
+            user={user}
+            picks={pTab==='win'?picksWin:picksSanti}
+            setMyPicks={pTab==='win'?setPicksWin:setPicksSanti}
+            actual={actual}
+            scores={scores}
+          />
         )}
 
         {/* CLAUDE */}
