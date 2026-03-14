@@ -38,9 +38,8 @@ const {useState,useEffect,useRef,useMemo}=React;
 
 /* ═══════════════════ USERS ═══════════════════ */
 const DEFAULT_USERS=[
-  {id:'win',   label:'Win',           icon:'⚽',color:'#EF0107',role:'admin',  pwd:'Win2026'},
-  {id:'santi', label:'Santi',         icon:'🎯',color:'#6CABDD',role:'admin',  pwd:'Santi2026'},
-  {id:'johnny',label:'Johnny Aguirre',icon:'🍀',color:'#00AA55',role:'viewer', pwd:'Johnny2026'},
+  {id:'win',  label:'Win',  icon:'⚽',color:'#EF0107',role:'admin',pwd:'Win2026'},
+  {id:'santi',label:'Santi',icon:'🎯',color:'#6CABDD',role:'admin',pwd:'Santi2026'},
 ];
 const getUsers=()=>{
   try{
@@ -188,18 +187,28 @@ const SCORERS_DATA={
   },
   '2025-26':{
     scorers:[
-      {name:'E. Haaland',team:'MCI',goals:17,nat:'🇳🇴',note:'16 PJ'},{name:'I. Thiago',team:'BRE',goals:11,nat:'🇧🇷'},
-      {name:'J.P. Mateta',team:'CRY',goals:7,nat:'🇫🇷'},{name:'D. Welbeck',team:'BRI',goals:7,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'H. Ekitike',team:'LFC',goals:7,nat:'🇫🇷'},{name:'P. Foden',team:'MCI',goals:7,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'Richarlison',team:'TOT',goals:6,nat:'🇧🇷'},{name:'B. Mbeumo',team:'MUN',goals:6,nat:'🇨🇲'},
-      {name:'A. Semenyo',team:'BOU',goals:6,nat:'🇬🇭'},{name:'J. Bowen',team:'WHU',goals:5,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'E. Haaland',  team:'MCI',goals:22,nat:'🇳🇴'},
+      {name:'I. Thiago',   team:'BRE',goals:14,nat:'🇧🇷'},
+      {name:'A. Isak',     team:'NEW',goals:13,nat:'🇸🇪'},
+      {name:'J.P. Mateta', team:'CRY',goals:11,nat:'🇫🇷'},
+      {name:'P. Foden',    team:'MCI',goals:10,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'H. Ekitike',  team:'LFC',goals:10,nat:'🇫🇷'},
+      {name:'D. Welbeck',  team:'BRI',goals:9, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'B. Mbeumo',   team:'MUN',goals:9, nat:'🇨🇲'},
+      {name:'A. Semenyo',  team:'BOU',goals:8, nat:'🇬🇭'},
+      {name:'C. Palmer',   team:'CFC',goals:8, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
     ],
     assists:[
-      {name:'B. Fernandes',team:'MUN',ast:14,nat:'🇵🇹'},{name:'M. Ødegaard',team:'ARS',ast:10,nat:'🇳🇴'},
-      {name:'P. Foden',team:'MCI',ast:9,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'M. Salah',team:'LFC',ast:8,nat:'🇪🇬'},
-      {name:'B. Saka',team:'ARS',ast:8,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'M. Rogers',team:'AVL',ast:7,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'E. Haaland',team:'MCI',ast:6,nat:'🇳🇴'},{name:'C. Palmer',team:'CFC',ast:6,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'B. Guimarães',team:'NEW',ast:5,nat:'🇧🇷'},{name:'I. Thiago',team:'BRE',ast:5,nat:'🇧🇷'},
+      {name:'B. Fernandes', team:'MUN',ast:14,nat:'🇵🇹'},
+      {name:'M. Ødegaard',  team:'ARS',ast:10,nat:'🇳🇴'},
+      {name:'J. Bowen',     team:'WHU',ast:9, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'A. Wharton',   team:'CRY',ast:8, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'E. Haaland',   team:'MCI',ast:7, nat:'🇳🇴'},
+      {name:'P. Foden',     team:'MCI',ast:7, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'B. Saka',      team:'ARS',ast:7, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'M. Rogers',    team:'AVL',ast:6, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'C. Palmer',    team:'CFC',ast:6, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+      {name:'I. Thiago',    team:'BRE',ast:5, nat:'🇧🇷'},
     ],
   },
 };
@@ -207,28 +216,29 @@ const SCORERS_DATA={
 /* Claude's pre-filled analysis picks for jornada 29-30 (14-16 Mar 2026)
    Based on: probabilities, H2H, form, context (Liverpool lost to Wolves, Chelsea beat Villa 4-1) */
 const CLAUDE_DEFAULT_PICKS={
-  g1:'a',  /* BUR vs BOU — BOU favorito 52.3%, ganó 3 de últimos 3 H2H */
-  g2:'d',  /* SUN vs BRI — Brighton 44.2% pero SUN en casa, empate plausible 28.6% */
-  g3:'h',  /* ARS vs EVE — Arsenal 69.5%, aplasta a Everton históricamente */
-  g4:'h',  /* CFC vs NEW — Chelsea 52.1% en casa, recuperados tras ganar 4-1 a Villa */
-  g5:'a',  /* WHU vs MCI — Man City 56.3%, WHU en zona de descenso */
-  g6:'h',  /* CRY vs LEE — Crystal Palace 38%, ganó a Tottenham 3-1, buena racha */
-  g7:'h',  /* MUN vs AVL — Man Utd 55.7% en casa, necesita puntos */
-  g8:'h',  /* NFO vs FUL — Nott'm F. 42.2%, juega en casa */
-  g9:'h',  /* LFC vs TOT — Liverpool 74.9%, Tottenham en caída libre */
-  g10:'h', /* BRE vs WOL — Brentford 61.7%, Wolves último en la tabla */
+  g1:'a', g2:'d', g3:'h', g4:'h', g5:'a',
+  g6:'h', g7:'h', g8:'h', g9:'h', g10:'h',
 };
 
-/* Per-user localStorage helpers — each user has their OWN key so picks NEVER mix */
+/* Per-user localStorage — NEVER shared between users */
 const PICKS_KEY=uid=>`eplcr_picks_${uid}`;
 const loadPicks=uid=>{
   try{
+    /* Try new per-user key first */
     const raw=localStorage.getItem(PICKS_KEY(uid));
-    if(raw) return JSON.parse(raw);
+    if(raw){const p=JSON.parse(raw);if(p&&Object.keys(p).length>0)return p;}
+    /* Migrate from old shared eplcr_preds key if it exists */
+    const oldRaw=localStorage.getItem('eplcr_preds');
+    if(oldRaw){
+      const old=JSON.parse(oldRaw);
+      if(old&&old[uid]&&Object.keys(old[uid]).length>0){
+        const migrated=old[uid];
+        localStorage.setItem(PICKS_KEY(uid),JSON.stringify(migrated));
+        return migrated;
+      }
+    }
   }catch(e){}
-  /* Default: Claude gets pre-filled, others start empty */
-  if(uid==='claude') return{...CLAUDE_DEFAULT_PICKS};
-  return {};
+  return uid==='claude'?{...CLAUDE_DEFAULT_PICKS}:{};
 };
 const savePicks=(uid,picks)=>{
   try{localStorage.setItem(PICKS_KEY(uid),JSON.stringify(picks));}catch(e){}
@@ -562,15 +572,8 @@ function MainApp({user,onLogout}){
   useEffect(()=>{savePicks('claude',picksClaude);},[picksClaude]);
   useEffect(()=>{localStorage.setItem('eplcr_scores',JSON.stringify(scores));},[scores]);
 
-  /* Build unified preds object for display & scoring */
+  /* Build unified preds object for display & scoring only */
   const preds=useMemo(()=>({win:picksWin,santi:picksSanti,claude:picksClaude}),[picksWin,picksSanti,picksClaude]);
-
-  /* Setter that routes to the correct state based on who */
-  const setPreds=(who,updater)=>{
-    if(who==='win')   setPicksWin(updater);
-    else if(who==='santi') setPicksSanti(updater);
-    else if(who==='claude') setPicksClaude(updater);
-  };
 
   /* Derive actual results automatically from scores */
   const actual=useMemo(()=>{
@@ -592,13 +595,15 @@ function MainApp({user,onLogout}){
       const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,
           messages:[{role:'user',content:`Experto Premier League. Predice SOLO los partidos aún no iniciados (14-16 Mar 2026 CR).
-Arsenal lidera 67pts. Liverpool perdió 2-1 Wolves. Chelsea goleó Villa 4-1. Crystal Palace venció Tottenham 3-1.
+Arsenal lidera 67pts (30PJ). Liverpool perdió 2-1 Wolves. Chelsea goleó Villa 4-1. Crystal Palace venció Tottenham 3-1.
 ${pending.map(m=>`${m.id}: ${T[m.h].n}(local ${m.prob.h}%) vs ${T[m.a].n}(visita ${m.prob.a}%) empate(${m.prob.d}%)`).join('\n')}
-SOLO JSON sin texto: {"g1":"h","g2":"d",...} h=local a=visita d=empate`}]})});
+SOLO JSON sin texto ni markdown: {"g1":"h","g2":"d",...} h=local a=visita d=empate`}]})});
       const d=await r.json();
       const raw=(d.content||[]).map(c=>c.text||'').join('');
-      setPreds(p=>({...p,claude:JSON.parse(raw.replace(/```json|```/g,'').trim())}));
-      setCMsg(`✅ ${pending.length} predicciones listas`);
+      const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
+      /* setPicksClaude directly — never touches Win/Santi picks */
+      setPicksClaude(prev=>({...prev,...parsed}));
+      setCMsg(`✅ ${Object.keys(parsed).length} predicciones listas`);
     }catch(e){setCMsg('❌ '+e.message);}
     setCLoad(false);
   };
@@ -951,6 +956,7 @@ SOLO JSON sin texto: {"g1":"h","g2":"d",...} h=local a=visita d=empate`}]})});
         {/* WIN / SANTI — independent picks, NEVER shared */}
         {(pTab==='win'||pTab==='santi')&&(
           <PicksPanel
+            key={pTab}
             who={pTab}
             user={user}
             picks={pTab==='win'?picksWin:picksSanti}
@@ -966,7 +972,7 @@ SOLO JSON sin texto: {"g1":"h","g2":"d",...} h=local a=visita d=empate`}]})});
             <div style={{fontSize:9,color:'#6070a0',letterSpacing:2,marginBottom:5}}>🤖 ANÁLISIS DE CLAUDE IA</div>
             <p style={{fontSize:13,color:'#8090b0',lineHeight:1.6,marginBottom:8}}>Claude predice solo partidos <strong style={{color:'#00d4aa'}}>antes de que comiencen</strong> en hora CR. Una vez iniciado el partido, ese pick queda bloqueado.</p>
             <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:10}}>
-              {UPCOMING.map(g=>{const started=gameStarted(g.crStart);const pick=(preds.claude||{})[g.id];return(
+              {UPCOMING.map(g=>{const started=gameStarted(g.crStart);const pick=picksClaude[g.id];return(
                 <div key={g.id} style={{fontSize:10,padding:'3px 8px',borderRadius:5,background:started?'#ff445518':pick?'#00d4aa18':'#151d2e',color:started?'#ff4455':pick?'#00d4aa':'#6070a0',border:`1px solid ${started?'#ff445544':pick?'#00d4aa44':'#ffffff10'}`}}>
                   {started?'🔒':pick?'✓':'○'} {T[g.h].n.split(' ')[0]}-{T[g.a].n.split(' ')[0]}
                 </div>);})}
@@ -978,7 +984,7 @@ SOLO JSON sin texto: {"g1":"h","g2":"d",...} h=local a=visita d=empate`}]})});
           </div>
           {/* Claude picks display — also uses actual for auto-result */}
           {UPCOMING.map(g=>{
-            const pick=(preds.claude||{})[g.id];const res=actual[g.id];
+            const pick=picksClaude[g.id];const res=actual[g.id];
             const ok=res&&pick&&res===pick;const fail=res&&pick&&res!==pick;
             const maxP=Math.max(g.prob.h,g.prob.a,g.prob.d);const started=gameStarted(g.crStart);
             const sc=scores[g.id]||{hs:'',as:''};const hasScore=sc.hs!==''&&sc.as!=='';
@@ -1018,7 +1024,7 @@ SOLO JSON sin texto: {"g1":"h","g2":"d",...} h=local a=visita d=empate`}]})});
             </div>
             {UPCOMING.map(g=>{
               const s=scores[g.id]||{hs:'',as:''};const r=scoreToResult(s.hs,s.as);const canEdit=user.role==='admin';
-              const winPred={win:(preds.win||{})[g.id],santi:(preds.santi||{})[g.id],claude:(preds.claude||{})[g.id]};
+              const winPred={win:(picksWin)[g.id],santi:(picksSanti)[g.id],claude:picksClaude[g.id]};
               return(
               <div key={g.id} style={{background:'#0d1220',border:`1px solid ${r?'#00d4aa33':'#ffffff0a'}`,borderRadius:9,marginBottom:5,padding:'9px 11px'}}>
                 {/* Match + score inputs */}
