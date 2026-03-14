@@ -18,13 +18,11 @@ body{background:#070b16;font-family:'Rajdhani',sans-serif;color:#dde8ff;overscro
 ::-webkit-scrollbar-track{background:#0d1220;}
 ::-webkit-scrollbar-thumb{background:#00d4aa55;border-radius:4px;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes shimmer{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}
 @keyframes loginPop{from{opacity:0;transform:scale(.94) translateY(14px)}to{opacity:1;transform:scale(1) translateY(0)}}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes shimmer{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}
 .fade{animation:fadeIn .3s ease;}
 .rh:hover{background:#ffffff09!important;cursor:pointer;}
-.pb{transition:all .15s;border:none;cursor:pointer;padding:5px 10px;border-radius:7px;
-    font-family:'Rajdhani',sans-serif;font-weight:600;font-size:12px;letter-spacing:.5px;}
+.pb{transition:all .15s;border:none;cursor:pointer;padding:5px 10px;border-radius:7px;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:12px;}
 .pb:hover{transform:scale(1.04);}
 .pb:active{transform:scale(.97);}
 input{font-family:'Rajdhani',sans-serif;}
@@ -32,83 +30,81 @@ input[type=number]::-webkit-inner-spin-button{opacity:1;}
 #root{max-width:820px;margin:0 auto;min-height:100vh;}
 </style>
 </head>
-<body><div id="root"></div>
+<body>
+<div id="root"></div>
 <script type="text/babel">
-const {useState,useEffect,useRef,useMemo}=React;
+const {useState, useEffect, useRef, useMemo} = React;
 
-/* ═══════════════════ USERS ═══════════════════ */
-const DEFAULT_USERS=[
-  {id:'win',  label:'Win',  icon:'⚽',color:'#EF0107',role:'admin',pwd:'Win2026'},
-  {id:'santi',label:'Santi',icon:'🎯',color:'#6CABDD',role:'admin',pwd:'Santi2026'},
+/* ── USERS ── */
+const DEFAULT_USERS = [
+  {id:'win',   label:'Win',  icon:'⚽', color:'#EF0107', role:'admin', pwd:'Win2026'},
+  {id:'santi', label:'Santi',icon:'🎯', color:'#6CABDD', role:'admin', pwd:'Santi2026'},
 ];
-const getUsers=()=>{
-  try{
-    const saved=localStorage.getItem('eplcr_users');
-    const saved_arr=saved?JSON.parse(saved):[];
-    /* Always merge: keep saved passwords but add any missing default users */
-    const merged=DEFAULT_USERS.map(def=>{
-      const existing=saved_arr.find(u=>u.id===def.id);
-      /* If user already exists in localStorage keep their saved password, else use default */
-      return existing?{...def,pwd:existing.pwd}:def;
+function getUsers() {
+  try {
+    const saved = localStorage.getItem('eplcr_users');
+    const arr = saved ? JSON.parse(saved) : [];
+    const merged = DEFAULT_USERS.map(def => {
+      const ex = arr.find(u => u.id === def.id);
+      return ex ? {...def, pwd: ex.pwd} : def;
     });
-    localStorage.setItem('eplcr_users',JSON.stringify(merged));
+    localStorage.setItem('eplcr_users', JSON.stringify(merged));
     return merged;
-  }catch(e){
-    localStorage.setItem('eplcr_users',JSON.stringify(DEFAULT_USERS));
+  } catch(e) {
     return DEFAULT_USERS;
   }
-};
-const saveUsers=u=>localStorage.setItem('eplcr_users',JSON.stringify(u));
-const getSession=()=>{try{return JSON.parse(localStorage.getItem('eplcr_session')||'null');}catch(e){return null;}};
-const saveSession=s=>localStorage.setItem('eplcr_session',JSON.stringify(s));
-const clearSession=()=>localStorage.removeItem('eplcr_session');
+}
+function saveUsers(u) { localStorage.setItem('eplcr_users', JSON.stringify(u)); }
+function getSession() { try { return JSON.parse(localStorage.getItem('eplcr_session') || 'null'); } catch(e) { return null; } }
+function saveSession(s) { localStorage.setItem('eplcr_session', JSON.stringify(s)); }
+function clearSession() { localStorage.removeItem('eplcr_session'); }
 
-/* ═══════════════════ TEAMS ═══════════════════ */
-const T={
-  ARS:{n:'Arsenal',c:'#EF0107',gf:56,ga:28},MCI:{n:'Man City',c:'#6CABDD',gf:52,ga:33},
-  MUN:{n:'Man Utd',c:'#DA291C',gf:42,ga:35},LFC:{n:'Liverpool',c:'#C8102E',gf:48,ga:40},
-  CFC:{n:'Chelsea',c:'#034694',gf:44,ga:36},TOT:{n:'Tottenham',c:'#132257',gf:35,ga:48},
-  AVL:{n:'Aston Villa',c:'#95BFE5',gf:43,ga:38},NEW:{n:'Newcastle',c:'#00A0A0',gf:38,ga:42},
-  BRI:{n:'Brighton',c:'#0057B8',gf:36,ga:37},WHU:{n:'West Ham',c:'#7A263A',gf:30,ga:50},
-  EVE:{n:'Everton',c:'#003399',gf:35,ga:38},BOU:{n:'Bournemouth',c:'#DA291C',gf:34,ga:34},
-  FUL:{n:'Fulham',c:'#CC0000',gf:38,ga:44},BRE:{n:'Brentford',c:'#D20000',gf:42,ga:43},
-  NFO:{n:"Nott'm F.",c:'#DD0000',gf:30,ga:48},CRY:{n:'Crystal Palace',c:'#1B458F',gf:33,ga:40},
-  SUN:{n:'Sunderland',c:'#EB172B',gf:32,ga:33},LEE:{n:'Leeds',c:'#f5c518',gf:30,ga:42},
-  WOL:{n:'Wolves',c:'#FDB913',gf:25,ga:55},BUR:{n:'Burnley',c:'#6C1D45',gf:22,ga:56},
+/* ── TEAMS ── */
+const T = {
+  ARS:{n:'Arsenal',c:'#EF0107',gf:56,ga:28}, MCI:{n:'Man City',c:'#6CABDD',gf:52,ga:33},
+  MUN:{n:'Man Utd',c:'#DA291C',gf:42,ga:35}, LFC:{n:'Liverpool',c:'#C8102E',gf:48,ga:40},
+  CFC:{n:'Chelsea',c:'#034694',gf:44,ga:36}, TOT:{n:'Tottenham',c:'#132257',gf:35,ga:48},
+  AVL:{n:'Aston Villa',c:'#95BFE5',gf:43,ga:38}, NEW:{n:'Newcastle',c:'#00A0A0',gf:38,ga:42},
+  BRI:{n:'Brighton',c:'#0057B8',gf:36,ga:37}, WHU:{n:'West Ham',c:'#7A263A',gf:30,ga:50},
+  EVE:{n:'Everton',c:'#003399',gf:35,ga:38}, BOU:{n:'Bournemouth',c:'#DA291C',gf:34,ga:34},
+  FUL:{n:'Fulham',c:'#CC0000',gf:38,ga:44}, BRE:{n:'Brentford',c:'#D20000',gf:42,ga:43},
+  NFO:{n:"Nott'm F.",c:'#DD0000',gf:30,ga:48}, CRY:{n:'Crystal Palace',c:'#1B458F',gf:33,ga:40},
+  SUN:{n:'Sunderland',c:'#EB172B',gf:32,ga:33}, LEE:{n:'Leeds',c:'#f5c518',gf:30,ga:42},
+  WOL:{n:'Wolves',c:'#FDB913',gf:25,ga:55}, BUR:{n:'Burnley',c:'#6C1D45',gf:22,ga:56},
 };
-const FORM={
-  ARS:['W','W','D','W'],MCI:['D','W','L','W'],MUN:['L','W','D','W'],LFC:['L','D','W','W'],
-  CFC:['W','D','W','L'],TOT:['L','L','D','W'],AVL:['L','W','W','D'],NEW:['W','L','W','D'],
-  BRI:['L','D','W','W'],WHU:['W','L','L','W'],EVE:['W','D','L','W'],BOU:['D','D','W','D'],
-  FUL:['L','W','D','W'],BRE:['D','W','L','W'],NFO:['D','L','W','L'],CRY:['W','L','W','D'],
-  SUN:['W','W','L','D'],LEE:['D','L','W','L'],WOL:['L','L','L','W'],BUR:['L','L','L','W'],
+const FORM = {
+  ARS:['W','W','D','W'], MCI:['D','W','L','W'], MUN:['L','W','D','W'], LFC:['L','D','W','W'],
+  CFC:['W','D','W','L'], TOT:['L','L','D','W'], AVL:['L','W','W','D'], NEW:['W','L','W','D'],
+  BRI:['L','D','W','W'], WHU:['W','L','L','W'], EVE:['W','D','L','W'], BOU:['D','D','W','D'],
+  FUL:['L','W','D','W'], BRE:['D','W','L','W'], NFO:['D','L','W','L'], CRY:['W','L','W','D'],
+  SUN:['W','W','L','D'], LEE:['D','L','W','L'], WOL:['L','L','L','W'], BUR:['L','L','L','W'],
 };
-const ST=[
-  {r:1,a:'ARS',gp:30,w:20,d:7,l:3,pts:67},{r:2,a:'MCI',gp:29,w:18,d:6,l:5,pts:60},
-  {r:3,a:'MUN',gp:29,w:14,d:9,l:6,pts:51},{r:4,a:'AVL',gp:29,w:15,d:6,l:8,pts:51},
-  {r:5,a:'CFC',gp:29,w:13,d:9,l:7,pts:48},{r:6,a:'LFC',gp:29,w:14,d:6,l:9,pts:48},
+const ST = [
+  {r:1,a:'ARS',gp:30,w:20,d:7,l:3,pts:67}, {r:2,a:'MCI',gp:29,w:18,d:6,l:5,pts:60},
+  {r:3,a:'MUN',gp:29,w:14,d:9,l:6,pts:51}, {r:4,a:'AVL',gp:29,w:15,d:6,l:8,pts:51},
+  {r:5,a:'CFC',gp:29,w:13,d:9,l:7,pts:48}, {r:6,a:'LFC',gp:29,w:14,d:6,l:9,pts:48},
   {r:7,a:'BRE',gp:29,w:13,d:5,l:11,pts:44},{r:8,a:'EVE',gp:29,w:12,d:7,l:10,pts:43},
-  {r:9,a:'BOU',gp:29,w:9,d:13,l:7,pts:40},{r:10,a:'FUL',gp:29,w:12,d:4,l:13,pts:40},
+  {r:9,a:'BOU',gp:29,w:9,d:13,l:7,pts:40}, {r:10,a:'FUL',gp:29,w:12,d:4,l:13,pts:40},
   {r:11,a:'SUN',gp:29,w:10,d:10,l:9,pts:40},{r:12,a:'NEW',gp:29,w:11,d:6,l:12,pts:39},
   {r:13,a:'CRY',gp:29,w:10,d:8,l:11,pts:38},{r:14,a:'BRI',gp:29,w:9,d:10,l:10,pts:37},
   {r:15,a:'LEE',gp:29,w:7,d:10,l:12,pts:31},{r:16,a:'TOT',gp:29,w:7,d:8,l:14,pts:29},
-  {r:17,a:'NFO',gp:29,w:7,d:7,l:15,pts:28},{r:18,a:'WHU',gp:29,w:7,d:7,l:15,pts:28},
-  {r:19,a:'BUR',gp:29,w:4,d:7,l:18,pts:19},{r:20,a:'WOL',gp:30,w:3,d:7,l:20,pts:16},
+  {r:17,a:'NFO',gp:29,w:7,d:7,l:15,pts:28}, {r:18,a:'WHU',gp:29,w:7,d:7,l:15,pts:28},
+  {r:19,a:'BUR',gp:29,w:4,d:7,l:18,pts:19}, {r:20,a:'WOL',gp:30,w:3,d:7,l:20,pts:16},
 ];
-const RECENT=[
-  {h:'TOT',a:'CRY',s:'1-3',d:'5 Mar'},{h:'NEW',a:'MUN',s:'2-1',d:'4 Mar'},
-  {h:'MCI',a:'NFO',s:'2-2',d:'4 Mar'},{h:'AVL',a:'CFC',s:'1-4',d:'4 Mar'},
-  {h:'FUL',a:'WHU',s:'0-1',d:'4 Mar'},{h:'BRI',a:'ARS',s:'0-1',d:'4 Mar'},
-  {h:'WOL',a:'LFC',s:'2-1',d:'3 Mar'},{h:'LEE',a:'SUN',s:'0-1',d:'3 Mar'},
-  {h:'EVE',a:'BUR',s:'2-0',d:'3 Mar'},{h:'BOU',a:'BRE',s:'0-0',d:'3 Mar'},
+const RECENT = [
+  {h:'TOT',a:'CRY',s:'1-3',d:'5 Mar'}, {h:'NEW',a:'MUN',s:'2-1',d:'4 Mar'},
+  {h:'MCI',a:'NFO',s:'2-2',d:'4 Mar'}, {h:'AVL',a:'CFC',s:'1-4',d:'4 Mar'},
+  {h:'FUL',a:'WHU',s:'0-1',d:'4 Mar'}, {h:'BRI',a:'ARS',s:'0-1',d:'4 Mar'},
+  {h:'WOL',a:'LFC',s:'2-1',d:'3 Mar'}, {h:'LEE',a:'SUN',s:'0-1',d:'3 Mar'},
+  {h:'EVE',a:'BUR',s:'2-0',d:'3 Mar'}, {h:'BOU',a:'BRE',s:'0-0',d:'3 Mar'},
 ];
-const UPCOMING=[
+const UPCOMING = [
   {id:'g1',h:'BUR',a:'BOU',date:'Sáb 14',time:'9:00',crStart:'2026-03-14T09:00',
    prob:{h:23.2,a:52.3,d:24.5},lastH2H:'BOU 2-1 BUR (25/26)',
    h2h:[{s:'25/26',r:'BOU 2-1 BUR',w:'BOU'},{s:'24/25',r:'BOU 1-0 BUR',w:'BOU'},{s:'23/24',r:'BOU 2-1 BUR',w:'BOU'},{s:'22/23',r:'BUR 1-0 BOU',w:'BUR'},{s:'21/22',r:'BOU 1-1 BUR',w:'D'}]},
   {id:'g2',h:'SUN',a:'BRI',date:'Sáb 14',time:'9:00',crStart:'2026-03-14T09:00',
    prob:{h:27.2,a:44.2,d:28.6},lastH2H:'BRI 2-0 SUN (25/26)',
-   h2h:[{s:'25/26',r:'BRI 2-0 SUN',w:'BRI'},{s:'24/25',r:'BRI 1-0 SUN',w:'BRI'},{s:'23/24',r:'N/A',w:null},{s:'22/23',r:'N/A',w:null}]},
+   h2h:[{s:'25/26',r:'BRI 2-0 SUN',w:'BRI'},{s:'24/25',r:'BRI 1-0 SUN',w:'BRI'},{s:'23/24',r:'N/A',w:null}]},
   {id:'g3',h:'ARS',a:'EVE',date:'Sáb 14',time:'11:30',crStart:'2026-03-14T11:30',
    prob:{h:69.5,a:11.0,d:19.5},lastH2H:'ARS 1-0 EVE (25/26)',
    h2h:[{s:'25/26',r:'ARS 1-0 EVE',w:'ARS'},{s:'24/25',r:'ARS 2-0 EVE',w:'ARS'},{s:'23/24',r:'ARS 4-0 EVE',w:'ARS'},{s:'22/23',r:'EVE 1-0 ARS',w:'EVE'},{s:'21/22',r:'ARS 2-1 EVE',w:'ARS'}]},
@@ -120,7 +116,7 @@ const UPCOMING=[
    h2h:[{s:'25/26',r:'MCI 3-0 WHU',w:'MCI'},{s:'24/25',r:'MCI 4-0 WHU',w:'MCI'},{s:'23/24',r:'MCI 3-1 WHU',w:'MCI'},{s:'22/23',r:'WHU 2-1 MCI',w:'WHU'},{s:'21/22',r:'MCI 2-2 WHU',w:'D'}]},
   {id:'g6',h:'CRY',a:'LEE',date:'Dom 15',time:'8:00',crStart:'2026-03-15T08:00',
    prob:{h:38.0,a:32.9,d:29.1},lastH2H:'LEE 2-1 CRY (25/26)',
-   h2h:[{s:'25/26',r:'LEE 2-1 CRY',w:'LEE'},{s:'24/25',r:'CRY 1-0 LEE',w:'CRY'},{s:'23/24',r:'N/A',w:null},{s:'22/23',r:'N/A',w:null}]},
+   h2h:[{s:'25/26',r:'LEE 2-1 CRY',w:'LEE'},{s:'24/25',r:'CRY 1-0 LEE',w:'CRY'},{s:'23/24',r:'N/A',w:null}]},
   {id:'g7',h:'MUN',a:'AVL',date:'Dom 15',time:'8:00',crStart:'2026-03-15T08:00',
    prob:{h:55.7,a:21.1,d:23.2},lastH2H:'AVL 1-0 MUN (25/26)',
    h2h:[{s:'25/26',r:'AVL 1-0 MUN',w:'AVL'},{s:'24/25',r:'MUN 2-0 AVL',w:'MUN'},{s:'23/24',r:'MUN 3-1 AVL',w:'MUN'},{s:'22/23',r:'MUN 1-0 AVL',w:'MUN'},{s:'21/22',r:'AVL 1-0 MUN',w:'AVL'}]},
@@ -134,1008 +130,998 @@ const UPCOMING=[
    prob:{h:61.7,a:16.6,d:21.7},lastH2H:'BRE 2-1 WOL (25/26)',
    h2h:[{s:'25/26',r:'BRE 2-1 WOL',w:'BRE'},{s:'24/25',r:'BRE 3-1 WOL',w:'BRE'},{s:'23/24',r:'BRE 2-1 WOL',w:'BRE'},{s:'22/23',r:'BRE 2-0 WOL',w:'BRE'},{s:'21/22',r:'WOL 0-2 BRE',w:'BRE'}]},
 ];
-
-/* ═══════════════════ SCORERS / ASSISTS ═══════════════════ */
-const SCORERS_DATA={
+const HIST = {
+  '2022-23':{champ:'MCI',pts:89,scorer:'E. Haaland — 36 ⚽',
+    m:[{h:'LFC',a:'MUN',s:'7-0',n:'Goleada histórica'},{h:'ARS',a:'MCI',s:'1-3',n:'City toma el liderato'},{h:'MCI',a:'ARS',s:'4-1',n:'City arrolla al Arsenal'},{h:'ARS',a:'TOT',s:'3-1',n:'Derby Norte de Londres'},{h:'MCI',a:'LFC',s:'4-1',n:'Haaland hat-trick'}]},
+  '2023-24':{champ:'MCI',pts:91,scorer:'E. Haaland — 27 ⚽',
+    m:[{h:'ARS',a:'MCI',s:'1-0',n:'Arsenal sorprende al campeón'},{h:'MCI',a:'ARS',s:'3-1',n:'City retoma el liderato'},{h:'LFC',a:'MCI',s:'1-1',n:'Punto clave'},{h:'ARS',a:'LFC',s:'3-1',n:'Arsenal se consolida'},{h:'CFC',a:'TOT',s:'4-1',n:'Derby del sur'}]},
+  '2024-25':{champ:'LFC',pts:88,scorer:'M. Salah — 28 ⚽',
+    m:[{h:'LFC',a:'MCI',s:'2-0',n:'Liverpool domina'},{h:'ARS',a:'LFC',s:'1-1',n:'Empate en la cumbre'},{h:'LFC',a:'ARS',s:'2-1',n:'Liverpool se escapa'},{h:'MCI',a:'ARS',s:'2-2',n:'City frena al Arsenal'},{h:'MUN',a:'MCI',s:'1-1',n:'Derby de Mánchester'}]},
+  '2025-26':{champ:null,pts:null,scorer:'En progreso…',leader:'ARS',leaderPts:67,
+    m:RECENT.slice(0,5).map(r => ({h:r.h,a:r.a,s:r.s,n:'Jornada 29 · Mar 2026'}))},
+};
+const SCORERS = {
   '2022-23':{
-    scorers:[
-      {name:'E. Haaland',team:'MCI',goals:36,nat:'🇳🇴'},{name:'H. Kane',team:'TOT',goals:30,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'I. Toney',team:'BRE',goals:20,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'M. Salah',team:'LFC',goals:19,nat:'🇪🇬'},
-      {name:'M. Ødegaard',team:'ARS',goals:15,nat:'🇳🇴'},{name:'B. Saka',team:'ARS',goals:14,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'R. Firmino',team:'LFC',goals:14,nat:'🇧🇷'},{name:'O. Watkins',team:'AVL',goals:15,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'M. Rashford',team:'MUN',goals:17,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'J. Maddison',team:'LEI',goals:12,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-    ],
-    assists:[
-      {name:'K. De Bruyne',team:'MCI',ast:16,nat:'🇧🇪'},{name:'T. Traoré',team:'BOU',ast:11,nat:'🇫🇷'},
-      {name:'L. Trossard',team:'BRI',ast:9,nat:'🇧🇪'},{name:'B. Saka',team:'ARS',ast:11,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'M. Salah',team:'LFC',ast:12,nat:'🇪🇬'},{name:'P. Foden',team:'MCI',ast:10,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'B. Fernandes',team:'MUN',ast:8,nat:'🇵🇹'},{name:'J. Maddison',team:'LEI',ast:10,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'H. Kane',team:'TOT',ast:3,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'R. Sterling',team:'CFC',ast:6,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-    ],
+    scorers:[{name:'E. Haaland',team:'MCI',goals:36,nat:'🇳🇴'},{name:'H. Kane',team:'TOT',goals:30,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'M. Rashford',team:'MUN',goals:17,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'I. Toney',team:'BRE',goals:20,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'O. Watkins',team:'AVL',goals:15,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'B. Saka',team:'ARS',goals:14,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'M. Salah',team:'LFC',goals:19,nat:'🇪🇬'},{name:'R. Firmino',team:'LFC',goals:14,nat:'🇧🇷'},{name:'J. Maddison',team:'LEI',goals:12,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'M. Ødegaard',team:'ARS',goals:15,nat:'🇳🇴'}],
+    assists:[{name:'K. De Bruyne',team:'MCI',ast:16,nat:'🇧🇪'},{name:'M. Salah',team:'LFC',ast:12,nat:'🇪🇬'},{name:'B. Saka',team:'ARS',ast:11,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'J. Maddison',team:'LEI',ast:10,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'P. Foden',team:'MCI',ast:10,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'T. Traoré',team:'BOU',ast:11,nat:'🇫🇷'},{name:'L. Trossard',team:'BRI',ast:9,nat:'🇧🇪'},{name:'B. Fernandes',team:'MUN',ast:8,nat:'🇵🇹'},{name:'H. Kane',team:'TOT',ast:3,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'R. Sterling',team:'CFC',ast:6,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'}],
   },
   '2023-24':{
-    scorers:[
-      {name:'E. Haaland',team:'MCI',goals:27,nat:'🇳🇴'},{name:'O. Watkins',team:'AVL',goals:19,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'C. Palmer',team:'CFC',goals:22,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'A. Isak',team:'NEW',goals:21,nat:'🇸🇪'},
-      {name:'M. Salah',team:'LFC',goals:18,nat:'🇪🇬'},{name:'D. Núñez',team:'LFC',goals:18,nat:'🇺🇾'},
-      {name:'L. Diaz',team:'LFC',goals:13,nat:'🇨🇴'},{name:'B. Saka',team:'ARS',goals:16,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'L. Trossard',team:'ARS',goals:12,nat:'🇧🇪'},{name:'P. Foden',team:'MCI',goals:19,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-    ],
-    assists:[
-      {name:'O. Watkins',team:'AVL',ast:13,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'C. Palmer',team:'CFC',ast:11,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'K. De Bruyne',team:'MCI',ast:10,nat:'🇧🇪'},{name:'M. Salah',team:'LFC',ast:9,nat:'🇪🇬'},
-      {name:'B. Saka',team:'ARS',ast:11,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'A. Isak',team:'NEW',ast:5,nat:'🇸🇪'},
-      {name:'E. Haaland',team:'MCI',ast:5,nat:'🇳🇴'},{name:'J. Maddison',team:'TOT',ast:9,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'P. Foden',team:'MCI',ast:8,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'B. Fernandes',team:'MUN',ast:7,nat:'🇵🇹'},
-    ],
+    scorers:[{name:'E. Haaland',team:'MCI',goals:27,nat:'🇳🇴'},{name:'C. Palmer',team:'CFC',goals:22,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'A. Isak',team:'NEW',goals:21,nat:'🇸🇪'},{name:'O. Watkins',team:'AVL',goals:19,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'P. Foden',team:'MCI',goals:19,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'M. Salah',team:'LFC',goals:18,nat:'🇪🇬'},{name:'D. Núñez',team:'LFC',goals:18,nat:'🇺🇾'},{name:'B. Saka',team:'ARS',goals:16,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'L. Trossard',team:'ARS',goals:12,nat:'🇧🇪'},{name:'J. Pedro',team:'BRI',goals:11,nat:'🇧🇷'}],
+    assists:[{name:'C. Palmer',team:'CFC',ast:11,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'O. Watkins',team:'AVL',ast:13,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'B. Saka',team:'ARS',ast:11,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'K. De Bruyne',team:'MCI',ast:10,nat:'🇧🇪'},{name:'M. Salah',team:'LFC',ast:9,nat:'🇪🇬'},{name:'J. Maddison',team:'TOT',ast:9,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'P. Foden',team:'MCI',ast:8,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'B. Fernandes',team:'MUN',ast:7,nat:'🇵🇹'},{name:'E. Haaland',team:'MCI',ast:5,nat:'🇳🇴'},{name:'A. Isak',team:'NEW',ast:5,nat:'🇸🇪'}],
   },
   '2024-25':{
-    scorers:[
-      {name:'M. Salah',team:'LFC',goals:28,nat:'🇪🇬'},{name:'E. Haaland',team:'MCI',goals:22,nat:'🇳🇴'},
-      {name:'A. Isak',team:'NEW',goals:23,nat:'🇸🇪'},{name:'B. Saka',team:'ARS',goals:18,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'C. Palmer',team:'CFC',goals:19,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'O. Watkins',team:'AVL',goals:17,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'D. Núñez',team:'LFC',goals:16,nat:'🇺🇾'},{name:'K. Havertz',team:'ARS',goals:15,nat:'🇩🇪'},
-      {name:'N. Jackson',team:'CFC',goals:14,nat:'🇬🇲'},{name:'M. Rashford',team:'MUN',goals:12,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-    ],
-    assists:[
-      {name:'M. Salah',team:'LFC',ast:18,nat:'🇪🇬'},{name:'K. De Bruyne',team:'MCI',ast:14,nat:'🇧🇪'},
-      {name:'B. Saka',team:'ARS',ast:12,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'C. Palmer',team:'CFC',ast:11,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'A. Isak',team:'NEW',ast:7,nat:'🇸🇪'},{name:'T. Alexander-Arnold',team:'LFC',ast:9,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'O. Watkins',team:'AVL',ast:10,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'P. Foden',team:'MCI',ast:8,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'J. Pedro',team:'BRI',ast:7,nat:'🇧🇷'},{name:'J. Maddison',team:'TOT',ast:8,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-    ],
+    scorers:[{name:'M. Salah',team:'LFC',goals:28,nat:'🇪🇬'},{name:'A. Isak',team:'NEW',goals:23,nat:'🇸🇪'},{name:'E. Haaland',team:'MCI',goals:22,nat:'🇳🇴'},{name:'C. Palmer',team:'CFC',goals:19,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'B. Saka',team:'ARS',goals:18,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'O. Watkins',team:'AVL',goals:17,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'D. Núñez',team:'LFC',goals:16,nat:'🇺🇾'},{name:'K. Havertz',team:'ARS',goals:15,nat:'🇩🇪'},{name:'N. Jackson',team:'CFC',goals:14,nat:'🇬🇲'},{name:'M. Rashford',team:'MUN',goals:12,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'}],
+    assists:[{name:'M. Salah',team:'LFC',ast:18,nat:'🇪🇬'},{name:'K. De Bruyne',team:'MCI',ast:14,nat:'🇧🇪'},{name:'B. Saka',team:'ARS',ast:12,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'C. Palmer',team:'CFC',ast:11,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'O. Watkins',team:'AVL',ast:10,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'T. Alexander-Arnold',team:'LFC',ast:9,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'P. Foden',team:'MCI',ast:8,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'J. Maddison',team:'TOT',ast:8,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'A. Isak',team:'NEW',ast:7,nat:'🇸🇪'},{name:'J. Pedro',team:'BRI',ast:7,nat:'🇧🇷'}],
   },
   '2025-26':{
-    scorers:[
-      {name:'E. Haaland',  team:'MCI',goals:22,nat:'🇳🇴'},
-      {name:'I. Thiago',   team:'BRE',goals:14,nat:'🇧🇷'},
-      {name:'A. Isak',     team:'NEW',goals:13,nat:'🇸🇪'},
-      {name:'J.P. Mateta', team:'CRY',goals:11,nat:'🇫🇷'},
-      {name:'P. Foden',    team:'MCI',goals:10,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'H. Ekitike',  team:'LFC',goals:10,nat:'🇫🇷'},
-      {name:'D. Welbeck',  team:'BRI',goals:9, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'B. Mbeumo',   team:'MUN',goals:9, nat:'🇨🇲'},
-      {name:'A. Semenyo',  team:'BOU',goals:8, nat:'🇬🇭'},
-      {name:'C. Palmer',   team:'CFC',goals:8, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-    ],
-    assists:[
-      {name:'B. Fernandes', team:'MUN',ast:14,nat:'🇵🇹'},
-      {name:'M. Ødegaard',  team:'ARS',ast:10,nat:'🇳🇴'},
-      {name:'J. Bowen',     team:'WHU',ast:9, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'A. Wharton',   team:'CRY',ast:8, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'E. Haaland',   team:'MCI',ast:7, nat:'🇳🇴'},
-      {name:'P. Foden',     team:'MCI',ast:7, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'B. Saka',      team:'ARS',ast:7, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'M. Rogers',    team:'AVL',ast:6, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'C. Palmer',    team:'CFC',ast:6, nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
-      {name:'I. Thiago',    team:'BRE',ast:5, nat:'🇧🇷'},
-    ],
+    scorers:[{name:'E. Haaland',team:'MCI',goals:22,nat:'🇳🇴'},{name:'I. Thiago',team:'BRE',goals:14,nat:'🇧🇷'},{name:'A. Isak',team:'NEW',goals:13,nat:'🇸🇪'},{name:'J.P. Mateta',team:'CRY',goals:11,nat:'🇫🇷'},{name:'P. Foden',team:'MCI',goals:10,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'H. Ekitike',team:'LFC',goals:10,nat:'🇫🇷'},{name:'D. Welbeck',team:'BRI',goals:9,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'B. Mbeumo',team:'MUN',goals:9,nat:'🇨🇲'},{name:'A. Semenyo',team:'BOU',goals:8,nat:'🇬🇭'},{name:'C. Palmer',team:'CFC',goals:8,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'}],
+    assists:[{name:'B. Fernandes',team:'MUN',ast:14,nat:'🇵🇹'},{name:'M. Ødegaard',team:'ARS',ast:10,nat:'🇳🇴'},{name:'J. Bowen',team:'WHU',ast:9,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'A. Wharton',team:'CRY',ast:8,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'P. Foden',team:'MCI',ast:7,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'B. Saka',team:'ARS',ast:7,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'E. Haaland',team:'MCI',ast:6,nat:'🇳🇴'},{name:'M. Rogers',team:'AVL',ast:6,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'C. Palmer',team:'CFC',ast:6,nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},{name:'I. Thiago',team:'BRE',ast:5,nat:'🇧🇷'}],
   },
 };
-/* ═══════════════════ PREDICTED SCORES PER USER ═══════════════════ */
-/* Each user inputs their PREDICTED marcador. Result (h/a/d) derived automatically. */
-const PRED_SCORES_KEY=uid=>`eplcr_pred_scores_${uid}`;
-
-/* My (Claude) predicted scorelines for jornada 29-30, 14-16 Mar 2026 */
-const CLAUDE_PRED_SCORES={
-  g1: {hs:'0',as:'2'}, /* BUR 0-2 BOU — Bournemouth strong away */
-  g2: {hs:'1',as:'1'}, /* SUN 1-1 BRI — tight, expecting a draw */
-  g3: {hs:'2',as:'0'}, /* ARS 2-0 EVE — Arsenal dominate at home */
-  g4: {hs:'2',as:'1'}, /* CFC 2-1 NEW — Chelsea bounce-back win */
-  g5: {hs:'0',as:'2'}, /* WHU 0-2 MCI — City too strong */
-  g6: {hs:'2',as:'1'}, /* CRY 2-1 LEE — Palace on good form */
-  g7: {hs:'2',as:'0'}, /* MUN 2-0 AVL — United need points at OT */
-  g8: {hs:'2',as:'1'}, /* NFO 2-1 FUL — Forest home advantage */
-  g9: {hs:'3',as:'0'}, /* LFC 3-0 TOT — Liverpool obliterate Spurs */
-  g10:{hs:'2',as:'0'}, /* BRE 2-0 WOL — Brentford vs bottom side */
-};
-
-const loadPredScores=uid=>{
-  try{
-    const raw=localStorage.getItem(PRED_SCORES_KEY(uid));
-    if(raw){const p=JSON.parse(raw);if(p&&Object.keys(p).length>0)return p;}
-  }catch(e){}
-  return uid==='claude'?{...CLAUDE_PRED_SCORES}:{};
-};
-const savePredScores=(uid,sc)=>{
-  try{localStorage.setItem(PRED_SCORES_KEY(uid),JSON.stringify(sc));}catch(e){}
-};
-  {id:'g1',h:'BUR',a:'BOU',
-   books:[
-     {name:'Bet365',  logo:'B3',color:'#00A651',odds:{h:4.50,d:3.60,a:1.75}},
-     {name:'1xBet',   logo:'1X',color:'#F5A623',odds:{h:4.40,d:3.55,a:1.78}},
-     {name:'Betcris', logo:'BC',color:'#E8001A',odds:{h:4.33,d:3.50,a:1.80}},
-   ]},
-  {id:'g2',h:'SUN',a:'BRI',
-   books:[
-     {name:'Bet365',  logo:'B3',color:'#00A651',odds:{h:3.20,d:3.30,a:2.25}},
-     {name:'1xBet',   logo:'1X',color:'#F5A623',odds:{h:3.10,d:3.25,a:2.30}},
-     {name:'Betcris', logo:'BC',color:'#E8001A',odds:{h:3.15,d:3.20,a:2.28}},
-   ]},
-  {id:'g3',h:'ARS',a:'EVE',
-   books:[
-     {name:'Bet365',  logo:'B3',color:'#00A651',odds:{h:1.40,d:5.00,a:8.50}},
-     {name:'1xBet',   logo:'1X',color:'#F5A623',odds:{h:1.38,d:4.90,a:8.80}},
-     {name:'Betcris', logo:'BC',color:'#E8001A',odds:{h:1.42,d:5.10,a:8.20}},
-   ]},
-  {id:'g4',h:'CFC',a:'NEW',
-   books:[
-     {name:'Bet365',  logo:'B3',color:'#00A651',odds:{h:1.90,d:3.60,a:4.00}},
-     {name:'1xBet',   logo:'1X',color:'#F5A623',odds:{h:1.88,d:3.55,a:4.10}},
-     {name:'Betcris', logo:'BC',color:'#E8001A',odds:{h:1.92,d:3.50,a:3.90}},
-   ]},
-  {id:'g5',h:'WHU',a:'MCI',
-   books:[
-     {name:'Bet365',  logo:'B3',color:'#00A651',odds:{h:4.75,d:3.80,a:1.72}},
-     {name:'1xBet',   logo:'1X',color:'#F5A623',odds:{h:4.60,d:3.75,a:1.74}},
-     {name:'Betcris', logo:'BC',color:'#E8001A',odds:{h:4.50,d:3.70,a:1.76}},
-   ]},
-  {id:'g6',h:'CRY',a:'LEE',
-   books:[
-     {name:'Bet365',  logo:'B3',color:'#00A651',odds:{h:2.50,d:3.20,a:2.90}},
-     {name:'1xBet',   logo:'1X',color:'#F5A623',odds:{h:2.45,d:3.15,a:2.95}},
-     {name:'Betcris', logo:'BC',color:'#E8001A',odds:{h:2.55,d:3.10,a:2.85}},
-   ]},
-  {id:'g7',h:'MUN',a:'AVL',
-   books:[
-     {name:'Bet365',  logo:'B3',color:'#00A651',odds:{h:1.80,d:3.60,a:4.75}},
-     {name:'1xBet',   logo:'1X',color:'#F5A623',odds:{h:1.78,d:3.55,a:4.80}},
-     {name:'Betcris', logo:'BC',color:'#E8001A',odds:{h:1.82,d:3.50,a:4.70}},
-   ]},
-  {id:'g8',h:'NFO',a:'FUL',
-   books:[
-     {name:'Bet365',  logo:'B3',color:'#00A651',odds:{h:2.20,d:3.20,a:3.40}},
-     {name:'1xBet',   logo:'1X',color:'#F5A623',odds:{h:2.15,d:3.25,a:3.45}},
-     {name:'Betcris', logo:'BC',color:'#E8001A',odds:{h:2.25,d:3.15,a:3.35}},
-   ]},
-  {id:'g9',h:'LFC',a:'TOT',
-   books:[
-     {name:'Bet365',  logo:'B3',color:'#00A651',odds:{h:1.30,d:5.50,a:10.00}},
-     {name:'1xBet',   logo:'1X',color:'#F5A623',odds:{h:1.28,d:5.40,a:10.50}},
-     {name:'Betcris', logo:'BC',color:'#E8001A',odds:{h:1.32,d:5.30,a:9.80}},
-   ]},
-  {id:'g10',h:'BRE',a:'WOL',
-   books:[
-     {name:'Bet365',  logo:'B3',color:'#00A651',odds:{h:1.62,d:3.75,a:5.50}},
-     {name:'1xBet',   logo:'1X',color:'#F5A623',odds:{h:1.60,d:3.80,a:5.60}},
-     {name:'Betcris', logo:'BC',color:'#E8001A',odds:{h:1.65,d:3.70,a:5.40}},
-   ]},
+const BETTING = [
+  {id:'g1',h:'BUR',a:'BOU',books:[{name:'Bet365',logo:'B3',color:'#00A651',odds:{h:4.50,d:3.60,a:1.75}},{name:'1xBet',logo:'1X',color:'#F5A623',odds:{h:4.40,d:3.55,a:1.78}},{name:'Betcris',logo:'BC',color:'#E8001A',odds:{h:4.33,d:3.50,a:1.80}}]},
+  {id:'g2',h:'SUN',a:'BRI',books:[{name:'Bet365',logo:'B3',color:'#00A651',odds:{h:3.20,d:3.30,a:2.25}},{name:'1xBet',logo:'1X',color:'#F5A623',odds:{h:3.10,d:3.25,a:2.30}},{name:'Betcris',logo:'BC',color:'#E8001A',odds:{h:3.15,d:3.20,a:2.28}}]},
+  {id:'g3',h:'ARS',a:'EVE',books:[{name:'Bet365',logo:'B3',color:'#00A651',odds:{h:1.40,d:5.00,a:8.50}},{name:'1xBet',logo:'1X',color:'#F5A623',odds:{h:1.38,d:4.90,a:8.80}},{name:'Betcris',logo:'BC',color:'#E8001A',odds:{h:1.42,d:5.10,a:8.20}}]},
+  {id:'g4',h:'CFC',a:'NEW',books:[{name:'Bet365',logo:'B3',color:'#00A651',odds:{h:1.90,d:3.60,a:4.00}},{name:'1xBet',logo:'1X',color:'#F5A623',odds:{h:1.88,d:3.55,a:4.10}},{name:'Betcris',logo:'BC',color:'#E8001A',odds:{h:1.92,d:3.50,a:3.90}}]},
+  {id:'g5',h:'WHU',a:'MCI',books:[{name:'Bet365',logo:'B3',color:'#00A651',odds:{h:4.75,d:3.80,a:1.72}},{name:'1xBet',logo:'1X',color:'#F5A623',odds:{h:4.60,d:3.75,a:1.74}},{name:'Betcris',logo:'BC',color:'#E8001A',odds:{h:4.50,d:3.70,a:1.76}}]},
+  {id:'g6',h:'CRY',a:'LEE',books:[{name:'Bet365',logo:'B3',color:'#00A651',odds:{h:2.50,d:3.20,a:2.90}},{name:'1xBet',logo:'1X',color:'#F5A623',odds:{h:2.45,d:3.15,a:2.95}},{name:'Betcris',logo:'BC',color:'#E8001A',odds:{h:2.55,d:3.10,a:2.85}}]},
+  {id:'g7',h:'MUN',a:'AVL',books:[{name:'Bet365',logo:'B3',color:'#00A651',odds:{h:1.80,d:3.60,a:4.75}},{name:'1xBet',logo:'1X',color:'#F5A623',odds:{h:1.78,d:3.55,a:4.80}},{name:'Betcris',logo:'BC',color:'#E8001A',odds:{h:1.82,d:3.50,a:4.70}}]},
+  {id:'g8',h:'NFO',a:'FUL',books:[{name:'Bet365',logo:'B3',color:'#00A651',odds:{h:2.20,d:3.20,a:3.40}},{name:'1xBet',logo:'1X',color:'#F5A623',odds:{h:2.15,d:3.25,a:3.45}},{name:'Betcris',logo:'BC',color:'#E8001A',odds:{h:2.25,d:3.15,a:3.35}}]},
+  {id:'g9',h:'LFC',a:'TOT',books:[{name:'Bet365',logo:'B3',color:'#00A651',odds:{h:1.30,d:5.50,a:10.00}},{name:'1xBet',logo:'1X',color:'#F5A623',odds:{h:1.28,d:5.40,a:10.50}},{name:'Betcris',logo:'BC',color:'#E8001A',odds:{h:1.32,d:5.30,a:9.80}}]},
+  {id:'g10',h:'BRE',a:'WOL',books:[{name:'Bet365',logo:'B3',color:'#00A651',odds:{h:1.62,d:3.75,a:5.50}},{name:'1xBet',logo:'1X',color:'#F5A623',odds:{h:1.60,d:3.80,a:5.60}},{name:'Betcris',logo:'BC',color:'#E8001A',odds:{h:1.65,d:3.70,a:5.40}}]},
 ];
 
-const HIST={
-  '2022-23':{champ:'MCI',pts:89,scorer:'E. Haaland — 36 ⚽',
-   m:[{h:'LFC',a:'MUN',s:'7-0',n:'Goleada histórica'},{h:'ARS',a:'MCI',s:'1-3',n:'City toma liderato'},
-      {h:'MCI',a:'ARS',s:'4-1',n:'City arrolla al Arsenal'},{h:'ARS',a:'TOT',s:'3-1',n:'Derby Norte Londres'},
-      {h:'MCI',a:'LFC',s:'4-1',n:'Haaland hat-trick'}]},
-  '2023-24':{champ:'MCI',pts:91,scorer:'E. Haaland — 27 ⚽',
-   m:[{h:'ARS',a:'MCI',s:'1-0',n:'Arsenal sorprende al campeón'},{h:'MCI',a:'ARS',s:'3-1',n:'City retoma liderato'},
-      {h:'LFC',a:'MCI',s:'1-1',n:'Punto clave'},{h:'ARS',a:'LFC',s:'3-1',n:'Arsenal se consolida'},
-      {h:'CFC',a:'TOT',s:'4-1',n:'Derby del sur'}]},
-  '2024-25':{champ:'LFC',pts:88,scorer:'M. Salah — 28 ⚽',
-   m:[{h:'LFC',a:'MCI',s:'2-0',n:'Liverpool domina'},{h:'ARS',a:'LFC',s:'1-1',n:'Empate en la cumbre'},
-      {h:'LFC',a:'ARS',s:'2-1',n:'Liverpool se escapa'},{h:'MCI',a:'ARS',s:'2-2',n:'City frena a Arsenal'},
-      {h:'MUN',a:'MCI',s:'1-1',n:'Derby de Mánchester'}]},
-  '2025-26':{champ:null,pts:null,scorer:'En progreso…',leader:'ARS',leaderPts:67,
-   m:RECENT.slice(0,5).map(r=>({h:r.h,a:r.a,s:r.s,n:'Jornada 29 · Mar 2026'}))},
+/* ── HELPERS ── */
+const bdg = r => r<=4?{c:'#00d4aa'}:r<=6?{c:'#f0c040'}:r>=18?{c:'#ff4455'}:{c:'transparent'};
+const fC = r => r==='W'?'#00d4aa':r==='L'?'#ff4455':'#f0c040';
+const pL = p => ({h:'Local',a:'Visita',d:'Empate'}[p]||'—');
+const med = i => ['🥇','🥈','🥉'][i]||(i+1+'.');
+const UM = {win:{l:'Win',i:'⚽',c:'#EF0107'}, santi:{l:'Santi',i:'🎯',c:'#6CABDD'}, claude:{l:'Claude IA',i:'🤖',c:'#00d4aa'}};
+
+function scoreToResult(hs, as) {
+  var h = parseInt(hs), a = parseInt(as);
+  if (isNaN(h)||isNaN(a)||hs===''||as==='') return null;
+  if (h>a) return 'h';
+  if (a>h) return 'a';
+  return 'd';
+}
+function gameStarted(crStartStr) {
+  var parts = crStartStr.split('T');
+  var dp = parts[0].split('-').map(Number);
+  var tp = parts[1].split(':').map(Number);
+  var gameUTC = new Date(Date.UTC(dp[0],dp[1]-1,dp[2],tp[0]+6,tp[1]));
+  return new Date() >= gameUTC;
+}
+
+/* ── PRED SCORES STORAGE ── */
+const CLAUDE_PRED_SCORES = {
+  g1:{hs:'0',as:'2'}, g2:{hs:'1',as:'1'}, g3:{hs:'2',as:'0'}, g4:{hs:'2',as:'1'},
+  g5:{hs:'0',as:'2'}, g6:{hs:'2',as:'1'}, g7:{hs:'2',as:'0'}, g8:{hs:'2',as:'1'},
+  g9:{hs:'3',as:'0'}, g10:{hs:'2',as:'0'},
 };
-
-/* ═══════════════════ HELPERS ═══════════════════ */
-const bdg=r=>r<=4?{c:'#00d4aa'}:r<=6?{c:'#f0c040'}:r>=18?{c:'#ff4455'}:{c:'transparent'};
-const pL=p=>({h:'Local',a:'Visita',d:'Empate'}[p]||'—');
-const med=i=>['🥇','🥈','🥉'][i]||(i+1+'.');
-const UM={win:{l:'Win',i:'⚽',c:'#EF0107'},santi:{l:'Santi',i:'🎯',c:'#6CABDD'},claude:{l:'Claude IA',i:'🤖',c:'#00d4aa'}};
-const fC=r=>r==='W'?'#00d4aa':r==='L'?'#ff4455':'#f0c040';
-const scoreToResult=(hs,as)=>{const h=parseInt(hs),a=parseInt(as);if(isNaN(h)||isNaN(a)||hs===''||as==='')return null;if(h>a)return'h';if(a>h)return'a';return'd';};
-const gameStarted=s=>{const[dp,tp]=s.split('T');const[y,mo,d]=dp.split('-').map(Number);const[hh,mm]=tp.split(':').map(Number);return new Date()>=new Date(Date.UTC(y,mo-1,d,hh+6,mm));};
-/* Best odds across bookmakers */
-const bestOdds=bk=>({
-  h:Math.max(...bk.map(b=>b.odds.h)),
-  d:Math.max(...bk.map(b=>b.odds.d)),
-  a:Math.max(...bk.map(b=>b.odds.a)),
-});
-
-/* ═══════════════════ LOGIN ═══════════════════ */
-function Login({onLogin}){
-  const[sel,setSel]=useState(null);const[pwd,setPwd]=useState('');const[err,setErr]=useState('');const[sp,setSp]=useState(false);
-  const ref=useRef();const users=getUsers();
-  const pick=u=>{setSel(u);setErr('');setPwd('');setTimeout(()=>ref.current&&ref.current.focus(),80);};
-  const go=()=>{const u=users.find(x=>x.id===sel.id);if(!u||pwd!==u.pwd){setErr('Contraseña incorrecta.');return;}const s={id:u.id,label:u.label,icon:u.icon,color:u.color,role:u.role};saveSession(s);onLogin(s);};
-  return(
-  <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20,background:'radial-gradient(ellipse at 50% -10%,#0d2040 0%,#070b16 65%)'}}>
-    <div style={{animation:'loginPop .5s ease',textAlign:'center',marginBottom:28}}>
-      <div style={{width:68,height:68,borderRadius:16,margin:'0 auto 12px',background:'linear-gradient(135deg,#00d4aa,#0090aa)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,fontWeight:900,color:'#070b16',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:-1,boxShadow:'0 8px 32px #00d4aa44'}}>EPL</div>
-      <div style={{fontSize:26,fontWeight:800,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:2}}>EPL TRACKER <span style={{color:'#00d4aa'}}>CR</span></div>
-      <div style={{fontSize:10,color:'#6070a0',letterSpacing:3,marginTop:3}}>PREMIER LEAGUE 2025–26</div>
-    </div>
-    <div style={{background:'#0d1220',border:'1px solid #ffffff12',borderRadius:16,padding:'26px 22px',width:'100%',maxWidth:350,animation:'loginPop .45s .08s ease both',boxShadow:'0 20px 60px #00000060'}}>
-      {!sel?(
-        <>
-          <div style={{fontSize:11,color:'#6070a0',letterSpacing:2,textAlign:'center',marginBottom:18}}>SELECCIONA TU USUARIO</div>
-          {users.map(u=>(
-            <button key={u.id} onClick={()=>pick(u)} style={{display:'flex',alignItems:'center',gap:14,padding:'13px 16px',borderRadius:11,border:'none',cursor:'pointer',background:'#151d2e',width:'100%',marginBottom:8,borderLeft:`4px solid ${u.color}`,transition:'all .2s'}}
-              onMouseEnter={e=>e.currentTarget.style.background='#1c2840'} onMouseLeave={e=>e.currentTarget.style.background='#151d2e'}>
-              <span style={{fontSize:26}}>{u.icon}</span>
-              <div style={{textAlign:'left'}}>
-                <div style={{fontSize:15,fontWeight:700,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif"}}>{u.label}</div>
-                <div style={{fontSize:10,color:u.color,letterSpacing:1}}>{u.role==='admin'?'ADMIN':'VIEWER'} · EPL Tracker CR</div>
-              </div>
-              <span style={{marginLeft:'auto',fontSize:16,color:'#6070a0'}}>→</span>
-            </button>
-          ))}
-        </>
-      ):(
-        <>
-          <button onClick={()=>{setSel(null);setErr('');setPwd('');}} style={{background:'transparent',border:'none',color:'#6070a0',cursor:'pointer',fontSize:11,letterSpacing:1,fontFamily:"'Rajdhani',sans-serif",fontWeight:600,marginBottom:14,display:'flex',alignItems:'center',gap:4}}>← CAMBIAR USUARIO</button>
-          <div style={{display:'flex',alignItems:'center',gap:12,background:'#151d2e',borderRadius:10,padding:'11px 13px',marginBottom:18,borderLeft:`4px solid ${sel.color}`}}>
-            <span style={{fontSize:26}}>{sel.icon}</span>
-            <div><div style={{fontSize:15,fontWeight:700,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif"}}>{sel.label}</div><div style={{fontSize:10,color:sel.color,letterSpacing:1}}>{sel.role==='admin'?'ADMIN':'VIEWER'}</div></div>
-          </div>
-          <div style={{fontSize:10,color:'#6070a0',letterSpacing:1.5,marginBottom:5}}>CONTRASEÑA</div>
-          <div style={{position:'relative',marginBottom:err?6:14}}>
-            <input ref={ref} type={sp?'text':'password'} value={pwd} onChange={e=>{setPwd(e.target.value);setErr('');}} onKeyDown={e=>e.key==='Enter'&&go()} placeholder="Ingresa tu contraseña"
-              style={{width:'100%',padding:'10px 40px 10px 13px',background:'#070b16',border:`1px solid ${err?'#ff4455':'#ffffff18'}`,borderRadius:9,color:'#dde8ff',fontSize:15,fontWeight:600,outline:'none',transition:'border-color .2s'}}
-              onFocus={e=>e.target.style.borderColor='#00d4aa55'} onBlur={e=>e.target.style.borderColor=err?'#ff4455':'#ffffff18'}/>
-            <button onClick={()=>setSp(!sp)} style={{position:'absolute',right:11,top:'50%',transform:'translateY(-50%)',background:'transparent',border:'none',cursor:'pointer',color:'#6070a0',fontSize:15}}>{sp?'🙈':'👁️'}</button>
-          </div>
-          {err&&<div style={{fontSize:12,color:'#ff4455',marginBottom:12}}>{err}</div>}
-          <button onClick={go} style={{width:'100%',padding:'11px',borderRadius:9,border:'none',cursor:'pointer',background:`linear-gradient(135deg,${sel.color},${sel.color}cc)`,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:16,letterSpacing:1,boxShadow:`0 4px 18px ${sel.color}44`,transition:'all .2s'}}
-            onMouseEnter={e=>e.currentTarget.style.transform='translateY(-1px)'} onMouseLeave={e=>e.currentTarget.style.transform='none'}>ENTRAR AL TRACKER</button>
-        </>
-      )}
-    </div>
-    <div style={{marginTop:18,fontSize:10,color:'#405070',letterSpacing:1}}>github.com/winreds · EPL Tracker CR</div>
-  </div>
-  );
+function loadPredScores(uid) {
+  try {
+    var raw = localStorage.getItem('eplcr_pred_' + uid);
+    if (raw) { var p = JSON.parse(raw); if (p && Object.keys(p).length > 0) return p; }
+  } catch(e) {}
+  return uid==='claude' ? Object.assign({}, CLAUDE_PRED_SCORES) : {};
+}
+function savePredScores(uid, sc) {
+  try { localStorage.setItem('eplcr_pred_' + uid, JSON.stringify(sc)); } catch(e) {}
 }
 
-/* ═══════════════════ ADMIN PANEL ═══════════════════ */
-function AdminPanel({onClose}){
-  const[users,setUsers]=useState(getUsers());const[eid,setEid]=useState(null);const[np,setNp]=useState('');const[cp,setCp]=useState('');const[msg,setMsg]=useState('');const[sp,setSp]=useState({});
-  const save=uid=>{if(np.length<6){setMsg('❌ Mínimo 6 caracteres.');return;}if(np!==cp){setMsg('❌ No coinciden.');return;}const u=users.map(x=>x.id===uid?{...x,pwd:np}:x);setUsers(u);saveUsers(u);setEid(null);setNp('');setCp('');setMsg('✅ Guardada.');setTimeout(()=>setMsg(''),3000);};
-  return(
-  <div style={{position:'fixed',inset:0,background:'#000000a0',zIndex:999,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div style={{background:'#0d1220',border:'1px solid #ffffff15',borderRadius:16,padding:'22px',width:'100%',maxWidth:400,animation:'loginPop .3s ease',maxHeight:'90vh',overflowY:'auto'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
-        <div><div style={{fontSize:17,fontWeight:800,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>⚙️ PANEL ADMIN</div><div style={{fontSize:10,color:'#6070a0',marginTop:2}}>Gestión de usuarios</div></div>
-        <button onClick={onClose} style={{background:'#ffffff10',border:'none',borderRadius:8,color:'#8090b0',cursor:'pointer',padding:'6px 10px',fontSize:17}}>✕</button>
-      </div>
-      {msg&&<div style={{fontSize:12,padding:'8px 12px',borderRadius:8,marginBottom:12,background:msg.includes('✅')?'#00d4aa18':'#ff445518',color:msg.includes('✅')?'#00d4aa':'#ff4455',border:`1px solid ${msg.includes('✅')?'#00d4aa33':'#ff445533'}`}}>{msg}</div>}
-      {users.map(u=>(
-      <div key={u.id} style={{background:'#151d2e',border:'1px solid #ffffff0a',borderRadius:11,padding:'13px',marginBottom:9,borderLeft:`4px solid ${u.color}`}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:eid===u.id?12:0}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:22}}>{u.icon}</span>
-            <div><div style={{fontSize:14,fontWeight:700,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif"}}>{u.label}</div><div style={{fontSize:9,color:u.color,letterSpacing:1}}>{u.role==='admin'?'ADMIN':'VIEWER'}</div></div>
-          </div>
-          <button onClick={()=>{setEid(eid===u.id?null:u.id);setNp('');setCp('');setMsg('');}} style={{background:eid===u.id?'#ff445522':'#00d4aa22',color:eid===u.id?'#ff4455':'#00d4aa',border:`1px solid ${eid===u.id?'#ff445544':'#00d4aa44'}`,borderRadius:7,padding:'4px 10px',cursor:'pointer',fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:11}}>{eid===u.id?'Cancelar':'🔑 Cambiar pwd'}</button>
-        </div>
-        {eid===u.id&&(
-        <div style={{marginTop:9}}>
-          {[{l:'Nueva contraseña',v:np,s:setNp,k:'np'},{l:'Confirmar',v:cp,s:setCp,k:'cp'}].map(f=>(
-          <div key={f.k} style={{marginBottom:9}}>
-            <div style={{fontSize:9,color:'#6070a0',letterSpacing:1.5,marginBottom:5}}>{f.l.toUpperCase()}</div>
-            <div style={{position:'relative'}}>
-              <input type={sp[f.k]?'text':'password'} value={f.v} onChange={e=>{f.s(e.target.value);setMsg('');}} placeholder="Mínimo 6 caracteres"
-                style={{width:'100%',padding:'9px 38px 9px 11px',background:'#070b16',border:'1px solid #ffffff18',borderRadius:8,color:'#dde8ff',fontSize:14,fontWeight:600,outline:'none'}}/>
-              <button onClick={()=>setSp(p=>({...p,[f.k]:!p[f.k]}))} style={{position:'absolute',right:9,top:'50%',transform:'translateY(-50%)',background:'transparent',border:'none',cursor:'pointer',color:'#6070a0',fontSize:13}}>{sp[f.k]?'🙈':'👁️'}</button>
-            </div>
-          </div>))}
-          <button onClick={()=>save(u.id)} style={{width:'100%',padding:'9px',borderRadius:8,border:'none',cursor:'pointer',background:`linear-gradient(135deg,${u.color},${u.color}bb)`,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",fontWeight:800,fontSize:14,letterSpacing:1}}>GUARDAR</button>
-        </div>)}
-      </div>))}
-      <div style={{marginTop:4,padding:'9px 11px',background:'#070b16',borderRadius:8,border:'1px solid #ffffff08',fontSize:11,color:'#405070',lineHeight:1.6}}>
-        💡 Defaults: <strong>Win2026</strong> · <strong>Santi2026</strong> · <strong>Johnny2026</strong>
-      </div>
-    </div>
-  </div>
-  );
+/* ── REAL SCORES STORAGE ── */
+function loadScores() {
+  try { return JSON.parse(localStorage.getItem('eplcr_scores') || '{}'); } catch(e) { return {}; }
 }
 
-/* ═══════════════════ TEAM DETAIL ═══════════════════ */
-function TeamDetail({code,onClose}){
-  const team=T[code];const st=ST.find(s=>s.a===code);const form=FORM[code]||[];
-  const recentGames=RECENT.filter(m=>m.h===code||m.a===code);
-  if(!team||!st)return null;
-  const gd=team.gf-team.ga;const pct=Math.round(st.w/st.gp*100);
-  return(
-  <div style={{position:'fixed',inset:0,background:'#000000b0',zIndex:900,display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div style={{background:'#0d1220',border:`2px solid ${team.c}44`,borderRadius:'16px 16px 0 0',padding:'20px',width:'100%',maxWidth:820,animation:'loginPop .3s ease',maxHeight:'85vh',overflowY:'auto'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-        <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <div style={{width:10,height:44,borderRadius:4,background:team.c,flexShrink:0}}/>
-          <div><div style={{fontSize:24,fontWeight:800,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>{team.n}</div><div style={{fontSize:11,color:'#6070a0',letterSpacing:1}}>Posición #{st.r} · {st.pts} puntos</div></div>
-        </div>
-        <button onClick={onClose} style={{background:'#ffffff10',border:'none',borderRadius:8,color:'#8090b0',cursor:'pointer',padding:'6px 10px',fontSize:18}}>✕</button>
+/* ══════════════ LOGIN ══════════════ */
+function Login({onLogin}) {
+  var [sel, setSel] = useState(null);
+  var [pwd, setPwd] = useState('');
+  var [err, setErr] = useState('');
+  var [sp, setSp] = useState(false);
+  var ref = useRef();
+  var users = getUsers();
+
+  function pick(u) { setSel(u); setErr(''); setPwd(''); setTimeout(function(){ if(ref.current) ref.current.focus(); }, 80); }
+  function go() {
+    var u = users.find(function(x){ return x.id===sel.id; });
+    if (!u || pwd!==u.pwd) { setErr('Contraseña incorrecta.'); return; }
+    var s = {id:u.id, label:u.label, icon:u.icon, color:u.color, role:u.role};
+    saveSession(s); onLogin(s);
+  }
+
+  return (
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20,background:'radial-gradient(ellipse at 50% -10%,#0d2040 0%,#070b16 65%)'}}>
+      <div style={{animation:'loginPop .5s ease',textAlign:'center',marginBottom:28}}>
+        <div style={{width:68,height:68,borderRadius:16,margin:'0 auto 12px',background:'linear-gradient(135deg,#00d4aa,#0090aa)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,fontWeight:900,color:'#070b16',letterSpacing:-1,boxShadow:'0 8px 32px #00d4aa44'}}>EPL</div>
+        <div style={{fontSize:26,fontWeight:800,color:'#fff',letterSpacing:2}}>EPL TRACKER <span style={{color:'#00d4aa'}}>CR</span></div>
+        <div style={{fontSize:10,color:'#6070a0',letterSpacing:3,marginTop:3}}>PREMIER LEAGUE 2025–26</div>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginBottom:14}}>
-        {[{l:'Jugados',v:st.gp,c:'#dde8ff'},{l:'Ganados',v:st.w,c:'#00d4aa'},{l:'Empatados',v:st.d,c:'#f0c040'},{l:'Perdidos',v:st.l,c:'#ff4455'},
-          {l:'Goles A Favor',v:team.gf,c:'#00d4aa'},{l:'Goles En Contra',v:team.ga,c:'#ff4455'},{l:'Dif. Goles',v:(gd>0?'+':'')+gd,c:gd>0?'#00d4aa':gd<0?'#ff4455':'#f0c040'},{l:'% Victoria',v:pct+'%',c:'#6CABDD'}].map((s,i)=>(
-          <div key={i} style={{background:'#151d2e',borderRadius:9,padding:'9px 8px',textAlign:'center',border:'1px solid #ffffff08'}}>
-            <div style={{fontSize:20,fontWeight:800,color:s.c,fontFamily:"'Barlow Condensed',sans-serif"}}>{s.v}</div>
-            <div style={{fontSize:9,color:'#6070a0',marginTop:2}}>{s.l}</div>
-          </div>))}
-      </div>
-      <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:7}}>ÚLTIMAS 4 JORNADAS</div>
-      <div style={{display:'flex',gap:6,marginBottom:14}}>
-        {form.map((r,i)=>(
-          <div key={i} style={{flex:1,textAlign:'center',padding:'8px 4px',borderRadius:8,background:r==='W'?'#00d4aa20':r==='L'?'#ff445520':'#f0c04020',border:`1px solid ${fC(r)}44`}}>
-            <div style={{fontSize:18,fontWeight:800,color:fC(r),fontFamily:"'Barlow Condensed',sans-serif"}}>{r}</div>
-            <div style={{fontSize:9,color:'#6070a0'}}>{i===0?'Últ.':i===1?'Ant.':'-'+(i+1)}</div>
-          </div>))}
-      </div>
-      {recentGames.length>0&&<>
-        <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:7}}>PARTIDOS RECIENTES</div>
-        {recentGames.map((m,i)=>{
-          const[hs,as]=m.s.split('-').map(Number);const hw=hs>as,aw=as>hs;const isHome=m.h===code;const won=(isHome&&hw)||(!isHome&&aw);const lost=(isHome&&aw)||(!isHome&&hw);
-          return(<div key={i} style={{display:'flex',alignItems:'center',background:'#151d2e',border:'1px solid #ffffff08',borderRadius:8,marginBottom:3,padding:'7px 10px',gap:6}}>
-            <div style={{width:3,height:20,borderRadius:2,background:won?'#00d4aa':lost?'#ff4455':'#f0c040',flexShrink:0}}/>
-            <span style={{flex:1,textAlign:'right',fontWeight:m.h===code?700:500,color:m.h===code?'#fff':'#6070a0',fontSize:13}}>{T[m.h].n}</span>
-            <div style={{padding:'3px 9px',background:'#0d1220',borderRadius:6,fontWeight:700,fontSize:13,color:'#fff',minWidth:48,textAlign:'center',border:'1px solid #ffffff12',flexShrink:0}}>{m.s}</div>
-            <span style={{flex:1,textAlign:'left',fontWeight:m.a===code?700:500,color:m.a===code?'#fff':'#6070a0',fontSize:13}}>{T[m.a].n}</span>
-            <div style={{fontSize:10,color:'#6070a0',width:46,textAlign:'right'}}>{m.d}</div>
-          </div>);})}
-      </>}
-    </div>
-  </div>
-  );
-}
-
-/* ═══════════════════ MAIN APP ═══════════════════ */
-function MainApp({user,onLogout}){
-  const[tab,setTab]=useState('inicio');
-  const[pTab,setPTab]=useState(()=>(['win','santi'].includes(user.id)?user.id:'win'));
-  const[histY,setHistY]=useState('2025-26');
-  const[oh2h,setOh2h]=useState(null);
-  /* ── Predicted SCORES — each user inputs their predicted marcador ── */
-  const[predWin,  setPredWin  ]=useState(()=>loadPredScores('win'));
-  const[predSanti,setPredSanti]=useState(()=>loadPredScores('santi'));
-  const[predClaude,setPredClaude]=useState(()=>loadPredScores('claude'));
-  const[scores,setScores]=useState(()=>{try{return JSON.parse(localStorage.getItem('eplcr_scores')||'{}')}catch(e){return{}}});
-  const[adminOpen,setAdminOpen]=useState(false);const[menuOpen,setMenuOpen]=useState(false);
-  const[teamDetail,setTeamDetail]=useState(null);
-  const[scorerY,setScorerY]=useState('2025-26');
-  const[scorerView,setScorerView]=useState('scorers');
-  const[bettingOpen,setBettingOpen]=useState(null);
-
-  useEffect(()=>{savePredScores('win',predWin);},[predWin]);
-  useEffect(()=>{savePredScores('santi',predSanti);},[predSanti]);
-  useEffect(()=>{savePredScores('claude',predClaude);},[predClaude]);
-  useEffect(()=>{localStorage.setItem('eplcr_scores',JSON.stringify(scores));},[scores]);
-
-  /* Derive predicted RESULT from predicted score */
-  const predResults=useMemo(()=>{
-    const mapUser=psMap=>Object.fromEntries(Object.entries(psMap).map(([id,sc])=>[id,scoreToResult(sc.hs,sc.as)]).filter(([,r])=>r!==null));
-    return{win:mapUser(predWin),santi:mapUser(predSanti),claude:mapUser(predClaude)};
-  },[predWin,predSanti,predClaude]);
-
-  /* Derive actual results automatically from scores */
-  const actual=useMemo(()=>{
-    const a={};
-    Object.entries(scores).forEach(([id,sc])=>{const r=scoreToResult(sc.hs,sc.as);if(r!==null)a[id]=r;});
-    return a;
-  },[scores]);
-
-  const setScore=(id,field,val)=>{
-    const clean=val.replace(/[^0-9]/g,'').slice(0,2);
-    setScores(p=>({...p,[id]:{...(p[id]||{hs:'',as:''}),[field]:clean}}));
-  };
-
-  const calcScore=who=>{
-    const pr=predResults[who]||{};
-    let w=0,tot=0;
-    Object.keys(actual).forEach(id=>{if(pr[id]){tot++;if(pr[id]===actual[id])w++;}});
-    return{w,tot,pct:tot?Math.round(w/tot*100):0};
-  };
-
-  const setPredScore=(who,id,field,val)=>{
-    const clean=val.replace(/[^0-9]/g,'').slice(0,2);
-    const setter=who==='win'?setPredWin:who==='santi'?setPredSanti:setPredClaude;
-    setter(p=>({...p,[id]:{...(p[id]||{hs:'',as:''}),[field]:clean}}));
-  };
-
-  const NAV=[
-    {id:'inicio',  icon:'🏠',l:'Inicio'},
-    {id:'results', icon:'📅',l:'Historial'},
-    {id:'fixtures',icon:'🔮',l:'Próximos'},
-    {id:'table',   icon:'📊',l:'Tabla'},
-    {id:'scoring', icon:'⚽',l:'Goleadores'},
-    {id:'betting', icon:'💰',l:'Apuestas'},
-    {id:'pred',    icon:'🎯',l:'Predicciones'},
-    {id:'comparar',icon:'📋',l:'Comparar'},
-  ];
-
-  return(
-  <div style={{fontFamily:"'Rajdhani',sans-serif",background:'#070b16',minHeight:'100vh',color:'#dde8ff'}}>
-    {adminOpen&&<AdminPanel onClose={()=>setAdminOpen(false)}/>}
-    {teamDetail&&<TeamDetail code={teamDetail} onClose={()=>setTeamDetail(null)}/>}
-
-    {menuOpen&&(
-    <div style={{position:'fixed',inset:0,zIndex:500}} onClick={()=>setMenuOpen(false)}>
-      <div style={{position:'absolute',top:58,right:10,background:'#0d1220',border:'1px solid #ffffff15',borderRadius:12,padding:7,minWidth:200,animation:'loginPop .2s ease',boxShadow:'0 10px 40px #00000080'}} onClick={e=>e.stopPropagation()}>
-        <div style={{padding:'9px 11px',borderBottom:'1px solid #ffffff0a',marginBottom:5}}>
-          <div style={{fontSize:10,color:'#6070a0',letterSpacing:1}}>SESIÓN ACTIVA</div>
-          <div style={{fontSize:15,fontWeight:700,color:'#fff',marginTop:2}}>{user.icon} {user.label}</div>
-          <div style={{fontSize:10,color:user.color,letterSpacing:1}}>{user.role==='admin'?'ADMIN':'VIEWER'}</div>
-        </div>
-        {user.role==='admin'&&(
-          <button onClick={()=>{setAdminOpen(true);setMenuOpen(false);}} style={{width:'100%',display:'flex',alignItems:'center',gap:9,padding:'8px 11px',background:'transparent',border:'none',cursor:'pointer',borderRadius:8,color:'#dde8ff',fontFamily:"'Rajdhani',sans-serif",fontWeight:600,fontSize:13,transition:'background .15s'}}
-            onMouseEnter={e=>e.currentTarget.style.background='#ffffff0a'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}><span>⚙️</span> Panel Admin</button>
-        )}
-        <button onClick={()=>{clearSession();onLogout();}} style={{width:'100%',display:'flex',alignItems:'center',gap:9,padding:'8px 11px',background:'transparent',border:'none',cursor:'pointer',borderRadius:8,color:'#ff4455',fontFamily:"'Rajdhani',sans-serif",fontWeight:600,fontSize:13,transition:'background .15s'}}
-          onMouseEnter={e=>e.currentTarget.style.background='#ff445512'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}><span>🚪</span> Cerrar sesión</button>
-      </div>
-    </div>)}
-
-    {/* HEADER */}
-    <header style={{background:'linear-gradient(135deg,#0b1828,#060e1c)',borderBottom:'2px solid #00d4aa33',padding:'9px 13px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:200}}>
-      <div style={{display:'flex',alignItems:'center',gap:9}}>
-        <div style={{width:38,height:38,borderRadius:9,background:'linear-gradient(135deg,#00d4aa,#0090aa)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:900,color:'#070b16',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:-1,flexShrink:0}}>EPL</div>
-        <div>
-          <div style={{fontSize:17,fontWeight:800,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1,lineHeight:1}}>EPL TRACKER <span style={{color:'#00d4aa'}}>CR</span></div>
-          <div style={{fontSize:9,color:'#8090b0',letterSpacing:2}}>PREMIER LEAGUE 2025–26</div>
-        </div>
-      </div>
-      <button onClick={()=>setMenuOpen(!menuOpen)} style={{display:'flex',alignItems:'center',gap:7,background:'#151d2e',border:`1px solid ${user.color}44`,borderRadius:9,padding:'5px 10px',cursor:'pointer',transition:'all .2s'}}
-        onMouseEnter={e=>e.currentTarget.style.borderColor=user.color+'88'} onMouseLeave={e=>e.currentTarget.style.borderColor=user.color+'44'}>
-        <span style={{fontSize:17}}>{user.icon}</span>
-        <div style={{textAlign:'left'}}><div style={{fontSize:12,fontWeight:700,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1}}>{user.label}</div><div style={{fontSize:9,color:user.color,letterSpacing:1}}>{user.role==='admin'?'ADMIN':'VIEWER'}</div></div>
-        <span style={{fontSize:11,color:'#6070a0',marginLeft:2}}>▾</span>
-      </button>
-    </header>
-
-    {/* NAV */}
-    <nav style={{display:'flex',gap:2,padding:'6px 7px 5px',background:'#0d1220',borderBottom:'1px solid #ffffff0a',overflowX:'auto',position:'sticky',top:57,zIndex:190}}>
-      {NAV.map(n=>(
-        <button key={n.id} onClick={()=>setTab(n.id)} style={{flex:'0 0 auto',display:'flex',flexDirection:'column',alignItems:'center',gap:1,padding:'5px 11px',border:'none',cursor:'pointer',borderRadius:8,background:tab===n.id?'#00d4aa':'transparent',color:tab===n.id?'#070b16':'#6070a0',fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:11,letterSpacing:.5,transition:'all .2s',whiteSpace:'nowrap'}}>
-          <span style={{fontSize:14}}>{n.icon}</span>{n.l}
-        </button>
-      ))}
-    </nav>
-
-    <main style={{padding:'10px 10px',paddingBottom:50}}>
-
-      {/* ══ INICIO ══ */}
-      {tab==='inicio'&&<div className="fade">
-        <div style={{background:'linear-gradient(135deg,#1c0a0a,#2a1010)',border:'1px solid #EF010755',borderRadius:12,padding:'13px 15px',marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <div><div style={{fontSize:9,color:'#EF010799',letterSpacing:2,marginBottom:3}}>🏆 LÍDER 2025-26</div><div style={{fontSize:23,fontWeight:800,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>Arsenal FC</div><div style={{fontSize:12,color:'#EF010799',marginTop:2}}>67 pts · 30 PJ · +7 sobre Man City</div></div>
-          <div style={{fontSize:44}}>🔴</div>
-        </div>
-        <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,margin:'9px 0 6px'}}>ÚLTIMOS RESULTADOS · JOR. 29</div>
-        {RECENT.map((m,i)=>{const[hs,as]=m.s.split('-').map(Number);const hw=hs>as,aw=as>hs;return(
-          <div key={i} className="rh" style={{display:'flex',alignItems:'center',background:i%2===0?'#0d1220':'#0a101c',border:'1px solid #ffffff08',borderRadius:8,marginBottom:3,padding:'7px 10px',gap:6}}>
-            <span style={{fontSize:10,color:'#6070a0',width:50,flexShrink:0}}>{m.d}</span>
-            <span style={{flex:1,textAlign:'right',fontWeight:hw?700:500,color:hw?'#fff':'#6070a0',fontSize:13}}>{T[m.h].n}</span>
-            <div style={{padding:'3px 10px',background:'#151d2e',borderRadius:6,fontWeight:700,fontSize:14,color:'#fff',minWidth:50,textAlign:'center',border:'1px solid #ffffff15',flexShrink:0}}>{m.s}</div>
-            <span style={{flex:1,textAlign:'left',fontWeight:aw?700:500,color:aw?'#fff':'#6070a0',fontSize:13}}>{T[m.a].n}</span>
-            <div style={{width:17,height:17,borderRadius:'50%',background:hw?T[m.h].c:aw?T[m.a].c:'#f0c040',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff',fontWeight:700,flexShrink:0}}>{hw?'L':aw?'V':'E'}</div>
-          </div>);})}
-        <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,margin:'14px 0 7px'}}>SELECCIONA UN EQUIPO</div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5}}>
-          {Object.entries(T).map(([code,team])=>{const st=ST.find(s=>s.a===code);return(
-            <button key={code} onClick={()=>setTeamDetail(code)} style={{background:'#0d1220',border:`1px solid ${team.c}33`,borderRadius:9,padding:'8px 5px',cursor:'pointer',transition:'all .2s',display:'flex',flexDirection:'column',alignItems:'center',gap:3}}
-              onMouseEnter={e=>e.currentTarget.style.borderColor=team.c+'88'} onMouseLeave={e=>e.currentTarget.style.borderColor=team.c+'33'}>
-              <div style={{width:4,height:18,borderRadius:2,background:team.c}}/>
-              <div style={{fontSize:10,fontWeight:700,color:'#dde8ff',fontFamily:"'Barlow Condensed',sans-serif",textAlign:'center',lineHeight:1.2}}>{team.n}</div>
-              <div style={{fontSize:11,fontWeight:800,color:'#00d4aa'}}>{st?st.pts:0}<span style={{fontSize:9,color:'#6070a0',fontWeight:400}}> pts</span></div>
-              <div style={{display:'flex',gap:2}}>
-                {(FORM[code]||[]).map((r,i)=>(<div key={i} style={{width:6,height:6,borderRadius:'50%',background:fC(r)}}/>))}
-              </div>
-            </button>);})}
-        </div>
-      </div>}
-
-      {/* ══ HISTORIAL ══ */}
-      {tab==='results'&&<div className="fade">
-        <div style={{display:'flex',gap:5,marginBottom:10,flexWrap:'wrap'}}>
-          {Object.keys(HIST).map(y=>(<button key={y} onClick={()=>setHistY(y)} style={{padding:'5px 13px',border:`1px solid ${histY===y?'transparent':'#ffffff15'}`,cursor:'pointer',borderRadius:8,background:histY===y?'#00d4aa':'#0d1220',color:histY===y?'#070b16':'#6070a0',fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:13,transition:'all .2s'}}>{y}</button>))}
-        </div>
-        {(()=>{const h=HIST[histY];const cur=histY==='2025-26';return(<div>
-          <div style={{background:cur?'linear-gradient(135deg,#0a1628,#071022)':'linear-gradient(135deg,#1a1400,#2a1e00)',border:`1px solid ${cur?'#00d4aa44':'#f0c04044'}`,borderRadius:12,padding:'12px 15px',marginBottom:10}}>
-            {cur?(<div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><div><div style={{fontSize:9,color:'#8090b0',letterSpacing:2,marginBottom:3}}>⚽ EN CURSO</div><div style={{fontSize:21,fontWeight:800,color:'#00d4aa',fontFamily:"'Barlow Condensed',sans-serif"}}>Arsenal lidera</div><div style={{fontSize:12,color:'#00d4aa99'}}>{h.leaderPts} pts · Jornada 30/38</div></div><div style={{fontSize:38}}>📊</div></div>
-            ):(<div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><div><div style={{fontSize:9,color:'#f0c04099',letterSpacing:2,marginBottom:3}}>🏆 CAMPEÓN</div><div style={{fontSize:21,fontWeight:800,color:'#f0c040',fontFamily:"'Barlow Condensed',sans-serif"}}>{T[h.champ]?.n||h.champ}</div><div style={{fontSize:12,color:'#f0c04099'}}>{h.pts} pts · {h.scorer}</div></div><div style={{fontSize:38}}>🏆</div></div>)}
-          </div>
-          <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:6}}>PARTIDOS DESTACADOS</div>
-          {h.m.map((m,i)=>{const[hs,as]=m.s.split('-').map(Number);const hw=hs>as,aw=as>hs;return(
-            <div key={i} style={{background:'#0d1220',border:'1px solid #ffffff08',borderRadius:9,marginBottom:4,padding:'9px 13px'}}>
-              <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:4}}>
-                <span style={{flex:1,textAlign:'right',fontWeight:hw?700:500,fontSize:13,color:hw?'#fff':'#6070a0'}}>{T[m.h]?.n||m.h}</span>
-                <div style={{padding:'3px 11px',background:'#151d2e',borderRadius:7,fontWeight:700,fontSize:14,color:'#fff',border:'1px solid #ffffff15',minWidth:52,textAlign:'center'}}>{m.s}</div>
-                <span style={{flex:1,textAlign:'left',fontWeight:aw?700:500,fontSize:13,color:aw?'#fff':'#6070a0'}}>{T[m.a]?.n||m.a}</span>
-              </div>
-              <div style={{textAlign:'center',fontSize:11,color:'#6070a0',fontStyle:'italic'}}>{m.n}</div>
-            </div>);})}
-        </div>);})()} 
-      </div>}
-
-      {/* ══ PRÓXIMOS ══ */}
-      {tab==='fixtures'&&<div className="fade">
-        <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:8}}>JORNADA 29-30 · 14-16 MAR 2026 · HORA CR</div>
-        {UPCOMING.map(m=>{
-          const open=oh2h===m.id;const maxP=Math.max(m.prob.h,m.prob.a,m.prob.d);
-          const fav=m.prob.h===maxP?T[m.h].n:m.prob.a===maxP?T[m.a].n:'Empate';const started=gameStarted(m.crStart);
-          const h2hW={[m.h]:0,[m.a]:0,D:0};
-          m.h2h.forEach(hh=>{if(hh.w===m.h)h2hW[m.h]++;else if(hh.w===m.a)h2hW[m.a]++;else if(hh.w==='D')h2hW.D++;});
-          return(
-          <div key={m.id} style={{background:'#0d1220',border:'1px solid #ffffff0a',borderRadius:11,marginBottom:7,overflow:'hidden'}}>
-            <div style={{padding:'10px 11px'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                <div style={{display:'flex',alignItems:'center',gap:6}}>
-                  <span style={{fontSize:11,color:'#6070a0',fontWeight:600}}>{m.date} · {m.time} CR</span>
-                  <span style={{fontSize:9,background:started?'#ff445522':'#00d4aa18',color:started?'#ff4455':'#00d4aa',border:`1px solid ${started?'#ff445544':'#00d4aa33'}`,borderRadius:4,padding:'1px 6px',letterSpacing:1}}>{started?'JUGADO':'PRÓXIMO'}</span>
+      <div style={{background:'#0d1220',border:'1px solid #ffffff12',borderRadius:16,padding:'26px 22px',width:'100%',maxWidth:350,animation:'loginPop .45s .08s ease both',boxShadow:'0 20px 60px #00000060'}}>
+        {!sel ? (
+          <div>
+            <div style={{fontSize:11,color:'#6070a0',letterSpacing:2,textAlign:'center',marginBottom:18}}>SELECCIONA TU USUARIO</div>
+            {users.map(function(u) { return (
+              <button key={u.id} onClick={function(){ pick(u); }} style={{display:'flex',alignItems:'center',gap:14,padding:'13px 16px',borderRadius:11,border:'none',cursor:'pointer',background:'#151d2e',width:'100%',marginBottom:8,borderLeft:'4px solid '+u.color,transition:'all .2s'}}
+                onMouseEnter={function(e){ e.currentTarget.style.background='#1c2840'; }}
+                onMouseLeave={function(e){ e.currentTarget.style.background='#151d2e'; }}>
+                <span style={{fontSize:26}}>{u.icon}</span>
+                <div style={{textAlign:'left'}}>
+                  <div style={{fontSize:15,fontWeight:700,color:'#fff'}}>{u.label}</div>
+                  <div style={{fontSize:10,color:u.color,letterSpacing:1}}>{u.role==='admin'?'ADMIN':'VIEWER'} · EPL Tracker CR</div>
                 </div>
-                <button onClick={()=>setOh2h(open?null:m.id)} style={{background:'transparent',border:'1px solid #ffffff15',color:'#6070a0',borderRadius:5,padding:'2px 9px',cursor:'pointer',fontSize:11,fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}>H2H {open?'▲':'▼'}</button>
-              </div>
-              <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:7}}>
-                <div style={{flex:1,textAlign:'right'}}><div style={{fontWeight:700,fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",color:m.prob.h===maxP?'#fff':'#6070a0'}}>{T[m.h].n}</div><div style={{fontSize:9,color:'#6070a0'}}>🏠 Local</div></div>
-                <div style={{padding:'4px 9px',background:'#151d2e',borderRadius:8,fontWeight:800,fontSize:12,color:'#8090b0',border:'1px solid #ffffff15',flexShrink:0,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>VS</div>
-                <div style={{flex:1,textAlign:'left'}}><div style={{fontWeight:700,fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",color:m.prob.a===maxP?'#fff':'#6070a0'}}>{T[m.a].n}</div><div style={{fontSize:9,color:'#6070a0'}}>✈️ Visita</div></div>
-              </div>
-              {/* Last H2H */}
-              <div style={{background:'#151d2e',borderRadius:7,padding:'6px 10px',marginBottom:7,display:'flex',alignItems:'center',justifyContent:'space-between',border:'1px solid #ffffff08'}}>
-                <span style={{fontSize:9,color:'#6070a0',letterSpacing:1}}>ÚLTIMO H2H</span>
-                <span style={{fontSize:12,fontWeight:700,color:'#dde8ff'}}>{m.lastH2H}</span>
-              </div>
-              {/* Prob bars */}
-              {[{l:T[m.h].n,v:m.prob.h,c:T[m.h].c},{l:'Empate',v:m.prob.d,c:'#f0c040'},{l:T[m.a].n,v:m.prob.a,c:T[m.a].c}].map((p,j)=>(
-                <div key={j} style={{marginBottom:4}}>
-                  <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:2}}>
-                    <span style={{color:p.v===maxP?'#dde8ff':'#6070a0'}}>{p.l}</span>
-                    <span style={{fontWeight:700,color:p.v===maxP?'#fff':'#6070a0'}}>{p.v}%</span>
-                  </div>
-                  <div style={{height:5,background:'#1a2236',borderRadius:3,overflow:'hidden'}}>
-                    <div style={{height:'100%',width:`${p.v}%`,background:p.v===maxP?p.c:p.c+'66',borderRadius:3,transition:'width .7s ease'}}/>
-                  </div>
-                </div>))}
-              <div style={{marginTop:7,fontSize:11,color:'#6070a0',textAlign:'center',background:'#151d2e',padding:'5px',borderRadius:6}}>📈 Favorito: <strong style={{color:'#00d4aa'}}>{fav}</strong> ({maxP}%)</div>
-            </div>
-            {open&&(
-              <div style={{background:'#080d18',borderTop:'1px solid #ffffff0a',padding:'10px 13px'}}>
-                <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:8}}>HISTORIAL DE ENFRENTAMIENTOS</div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:6,marginBottom:10,background:'#0d1220',borderRadius:9,padding:'10px 12px',border:'1px solid #ffffff0a'}}>
-                  <div style={{textAlign:'center'}}><div style={{fontSize:22,fontWeight:800,color:T[m.h].c,fontFamily:"'Barlow Condensed',sans-serif"}}>{h2hW[m.h]}</div><div style={{fontSize:9,color:'#6070a0'}}>{T[m.h].n}</div></div>
-                  <div style={{textAlign:'center',display:'flex',flexDirection:'column',justifyContent:'center',gap:2}}><div style={{fontSize:18,fontWeight:800,color:'#f0c040',fontFamily:"'Barlow Condensed',sans-serif"}}>{h2hW.D}</div><div style={{fontSize:9,color:'#6070a0'}}>Empates</div></div>
-                  <div style={{textAlign:'center'}}><div style={{fontSize:22,fontWeight:800,color:T[m.a].c,fontFamily:"'Barlow Condensed',sans-serif"}}>{h2hW[m.a]}</div><div style={{fontSize:9,color:'#6070a0'}}>{T[m.a].n}</div></div>
-                </div>
-                {m.h2h.map((hh,j)=>(
-                  <div key={j} style={{display:'flex',gap:9,marginBottom:4,fontSize:12,padding:'5px 8px',background:'#0d1220',borderRadius:6,borderLeft:`3px solid ${hh.w===m.h?T[m.h].c:hh.w===m.a?T[m.a].c:hh.w==='D'?'#f0c040':'#ffffff15'}`}}>
-                    <span style={{color:'#8090b0',width:40,flexShrink:0,fontWeight:600,background:'#151d2e',borderRadius:4,padding:'1px 4px',textAlign:'center',fontSize:10}}>{hh.s}</span>
-                    <span style={{color:'#dde8ff',flex:1}}>{hh.r}</span>
-                    {hh.w&&hh.w!=='D'&&<span style={{fontSize:10,color:hh.w===m.h?T[m.h].c:T[m.a].c,fontWeight:700,flexShrink:0}}>{hh.w===m.h?T[m.h].n:T[m.a].n}</span>}
-                    {hh.w==='D'&&<span style={{fontSize:10,color:'#f0c040',fontWeight:700,flexShrink:0}}>Empate</span>}
-                  </div>))}
-              </div>)}
-          </div>);})}
-      </div>}
-
-      {/* ══ TABLA ══ */}
-      {tab==='table'&&<div className="fade">
-        <div style={{background:'#0d1220',borderRadius:11,overflow:'hidden',border:'1px solid #ffffff0a'}}>
-          <div style={{display:'grid',gridTemplateColumns:'27px 6px 1fr 30px 24px 24px 24px 32px auto',gap:3,padding:'7px 9px',background:'#111826',fontSize:9,color:'#6070a0',letterSpacing:.5,fontWeight:700}}>
-            <span>#</span><span/><span>EQUIPO</span><span style={{textAlign:'center'}}>PJ</span><span style={{textAlign:'center',color:'#00d4aa'}}>G</span><span style={{textAlign:'center',color:'#f0c040'}}>E</span><span style={{textAlign:'center',color:'#ff4455'}}>P</span><span style={{textAlign:'right',color:'#00d4aa'}}>PTS</span><span style={{textAlign:'right',paddingRight:4}}>FORMA</span>
-          </div>
-          {ST.map((s,i)=>{const b=bdg(s.r);const form=FORM[s.a]||[];return(
-            <div key={i} className="rh" onClick={()=>setTeamDetail(s.a)} style={{display:'grid',gridTemplateColumns:'27px 6px 1fr 30px 24px 24px 24px 32px auto',gap:3,padding:'6px 9px',alignItems:'center',fontSize:12,background:i%2===0?'#0d1220':'#0a101c',borderLeft:`3px solid ${b.c!=='transparent'?b.c:'transparent'}`}}>
-              <span style={{fontWeight:700,color:s.r<=4?'#00d4aa':s.r>=18?'#ff4455':'#6070a0',fontSize:11}}>{s.r}</span>
-              <div style={{width:6,height:18,borderRadius:2,background:T[s.a].c}}/>
-              <span style={{fontWeight:600,fontSize:12}}>{T[s.a].n}</span>
-              <span style={{textAlign:'center',color:'#6070a0',fontSize:11}}>{s.gp}</span>
-              <span style={{textAlign:'center',color:'#00d4aa',fontSize:11,fontWeight:700}}>{s.w}</span>
-              <span style={{textAlign:'center',color:'#f0c040',fontSize:11}}>{s.d}</span>
-              <span style={{textAlign:'center',color:'#ff4455',fontSize:11}}>{s.l}</span>
-              <span style={{textAlign:'right',fontWeight:800,fontSize:13,color:s.r===1?'#f0c040':s.r<=4?'#00d4aa':'#dde8ff'}}>{s.pts}</span>
-              <div style={{display:'flex',gap:2,justifyContent:'flex-end',paddingRight:4}}>
-                {form.map((r,j)=>(<div key={j} style={{width:14,height:14,borderRadius:3,background:fC(r),display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,fontWeight:800,color:'#000'}}>{r}</div>))}
-              </div>
-            </div>);})}
-        </div>
-        <div style={{display:'flex',gap:12,marginTop:8,fontSize:11,color:'#6070a0',padding:'0 4px',flexWrap:'wrap'}}>
-          {[['#00d4aa','Champions'],['#f0c040','Europa'],['#ff4455','Descenso'],['#dde8ff','→ Toca para ficha']].map(([c,l])=>(<div key={l} style={{display:'flex',alignItems:'center',gap:4}}><div style={{width:8,height:8,borderRadius:2,background:c}}/><span>{l}</span></div>))}
-        </div>
-      </div>}
-
-      {/* ══ GOLEADORES ══ */}
-      {tab==='scoring'&&<div className="fade">
-        {/* Season selector */}
-        <div style={{display:'flex',gap:5,marginBottom:10,flexWrap:'wrap'}}>
-          {Object.keys(SCORERS_DATA).map(y=>(<button key={y} onClick={()=>setScorerY(y)} style={{padding:'5px 13px',border:`1px solid ${scorerY===y?'transparent':'#ffffff15'}`,cursor:'pointer',borderRadius:8,background:scorerY===y?'#00d4aa':'#0d1220',color:scorerY===y?'#070b16':'#6070a0',fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:13,transition:'all .2s'}}>{y}</button>))}
-        </div>
-        {/* Toggle scorers/assists */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,background:'#0d1220',padding:4,borderRadius:10,border:'1px solid #ffffff0a',marginBottom:12}}>
-          {[{id:'scorers',icon:'⚽',l:'Goleadores'},{id:'assists',icon:'🅰️',l:'Asistidores'}].map(v=>(
-            <button key={v.id} onClick={()=>setScorerView(v.id)} style={{padding:'8px',border:'none',cursor:'pointer',borderRadius:8,background:scorerView===v.id?'#00d4aa':'transparent',color:scorerView===v.id?'#070b16':'#6070a0',fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:13,transition:'all .2s',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-              <span>{v.icon}</span>{v.l}
-            </button>))}
-        </div>
-        {/* Scorers */}
-        {scorerView==='scorers'&&(()=>{
-          const data=SCORERS_DATA[scorerY].scorers;
-          return(<div>
-            <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:8}}>TOP GOLEADORES · {scorerY}</div>
-            {data.map((p,i)=>{
-              const maxG=data[0].goals;const pct=Math.round(p.goals/maxG*100);
-              const teamColor=Object.entries(T).find(([k])=>k===p.team)?.[1]?.c||'#6070a0';
-              return(
-              <div key={i} style={{background:i%2===0?'#0d1220':'#0a101c',border:'1px solid #ffffff08',borderRadius:9,marginBottom:4,padding:'10px 12px'}}>
-                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
-                  <div style={{width:26,height:26,borderRadius:'50%',background:i===0?'#f0c04030':i===1?'#c0c0c020':i===2?'#cd7f3220':'#ffffff10',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>{med(i)}</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:15,fontWeight:700,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:.5}}>{p.nat} {p.name}</div>
-                    <div style={{fontSize:10,color:'#6070a0',marginTop:1}}>{T[p.team]?.n||p.team}</div>
-                  </div>
-                  <div style={{textAlign:'right'}}>
-                    <div style={{fontSize:24,fontWeight:800,color:i===0?'#f0c040':teamColor,fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1}}>{p.goals}</div>
-                    <div style={{fontSize:9,color:'#6070a0'}}>goles</div>
-                  </div>
-                </div>
-                <div style={{height:4,background:'#1a2236',borderRadius:2,overflow:'hidden'}}>
-                  <div style={{height:'100%',width:`${pct}%`,background:i===0?'#f0c040':teamColor,borderRadius:2,transition:'width .7s ease'}}/>
-                </div>
-              </div>);})}
-          </div>);
-        })()}
-        {/* Assists */}
-        {scorerView==='assists'&&(()=>{
-          const data=SCORERS_DATA[scorerY].assists;
-          return(<div>
-            <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:8}}>TOP ASISTIDORES · {scorerY}</div>
-            {data.map((p,i)=>{
-              const maxA=data[0].ast;const pct=Math.round(p.ast/maxA*100);
-              const teamColor=Object.entries(T).find(([k])=>k===p.team)?.[1]?.c||'#6070a0';
-              return(
-              <div key={i} style={{background:i%2===0?'#0d1220':'#0a101c',border:'1px solid #ffffff08',borderRadius:9,marginBottom:4,padding:'10px 12px'}}>
-                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
-                  <div style={{width:26,height:26,borderRadius:'50%',background:i===0?'#f0c04030':i===1?'#c0c0c020':i===2?'#cd7f3220':'#ffffff10',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>{med(i)}</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:15,fontWeight:700,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:.5}}>{p.nat} {p.name}</div>
-                    <div style={{fontSize:10,color:'#6070a0',marginTop:1}}>{T[p.team]?.n||p.team}</div>
-                  </div>
-                  <div style={{textAlign:'right'}}>
-                    <div style={{fontSize:24,fontWeight:800,color:i===0?'#f0c040':teamColor,fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1}}>{p.ast}</div>
-                    <div style={{fontSize:9,color:'#6070a0'}}>asistencias</div>
-                  </div>
-                </div>
-                <div style={{height:4,background:'#1a2236',borderRadius:2,overflow:'hidden'}}>
-                  <div style={{height:'100%',width:`${pct}%`,background:i===0?'#f0c040':teamColor,borderRadius:2,transition:'width .7s ease'}}/>
-                </div>
-              </div>);})}
-          </div>);
-        })()}
-      </div>}
-
-      {/* ══ APUESTAS ══ */}
-      {tab==='betting'&&<div className="fade">
-        <div style={{background:'linear-gradient(135deg,#0a1a0a,#0f2010)',border:'1px solid #00AA5533',borderRadius:11,padding:'11px 14px',marginBottom:12}}>
-          <div style={{fontSize:9,color:'#00AA55',letterSpacing:2,marginBottom:4}}>💰 CASAS DE APUESTAS</div>
-          <div style={{fontSize:12,color:'#8090b0',lineHeight:1.5}}>Cuotas en formato decimal (europeo) para la jornada 14-16 Mar 2026. Se muestra la <span style={{color:'#f0c040',fontWeight:700}}>mejor cuota disponible</span> entre las 3 casas para cada resultado.</div>
-        </div>
-        {/* Bookmaker legend */}
-        <div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>
-          {[{name:'Bet365',logo:'B3',color:'#00A651'},{name:'1xBet',logo:'1X',color:'#F5A623'},{name:'Betcris',logo:'BC',color:'#E8001A'}].map(b=>(
-            <div key={b.name} style={{display:'flex',alignItems:'center',gap:6,background:'#0d1220',border:`1px solid ${b.color}44`,borderRadius:8,padding:'5px 10px'}}>
-              <div style={{width:22,height:22,borderRadius:5,background:b.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif"}}>{b.logo}</div>
-              <span style={{fontSize:12,fontWeight:600,color:'#dde8ff'}}>{b.name}</span>
-            </div>))}
-        </div>
-        {BETTING.map(m=>{
-          const open=bettingOpen===m.id;const best=bestOdds(m.books);
-          const maxOdds=Math.max(best.h,best.d,best.a);
-          const favResult=best.h===Math.min(best.h,best.a)?'h':'a';
-          return(
-          <div key={m.id} style={{background:'#0d1220',border:'1px solid #ffffff0a',borderRadius:11,marginBottom:7,overflow:'hidden'}}>
-            <div style={{padding:'10px 12px'}}>
-              {/* Teams */}
-              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                <div style={{flex:1,textAlign:'right'}}><div style={{fontWeight:700,fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",color:'#fff'}}>{T[m.h].n}</div><div style={{fontSize:9,color:'#6070a0'}}>🏠 Local</div></div>
-                <div style={{padding:'3px 9px',background:'#151d2e',borderRadius:7,fontWeight:800,fontSize:12,color:'#6070a0',border:'1px solid #ffffff15',flexShrink:0,fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:1}}>VS</div>
-                <div style={{flex:1,textAlign:'left'}}><div style={{fontWeight:700,fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",color:'#fff'}}>{T[m.a].n}</div><div style={{fontSize:9,color:'#6070a0'}}>✈️ Visita</div></div>
-              </div>
-              {/* Best odds summary */}
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:5,marginBottom:8}}>
-                {[{label:T[m.h].n.split(' ')[0],val:best.h,col:T[m.h].c,tag:'Local'},{label:'Empate',val:best.d,col:'#f0c040',tag:'X'},{label:T[m.a].n.split(' ')[0],val:best.a,col:T[m.a].c,tag:'Visita'}].map((o,j)=>(
-                  <div key={j} style={{background:'#151d2e',borderRadius:8,padding:'8px 6px',textAlign:'center',border:`1px solid ${o.val===Math.min(best.h,best.a)&&j!==1?o.col+'55':'#ffffff0a'}`,position:'relative'}}>
-                    {o.val===Math.min(best.h,best.a)&&j!==1&&<div style={{position:'absolute',top:-6,right:-4,fontSize:9,background:'#f0c040',color:'#000',borderRadius:4,padding:'0 4px',fontWeight:800}}>FAV</div>}
-                    <div style={{fontSize:9,color:'#6070a0',marginBottom:3}}>{o.tag}</div>
-                    <div style={{fontSize:22,fontWeight:800,color:o.col,fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1}}>{o.val.toFixed(2)}</div>
-                    <div style={{fontSize:9,color:'#6070a0',marginTop:2}}>mejor cuota</div>
-                  </div>))}
-              </div>
-              {/* Toggle per-book */}
-              <button onClick={()=>setBettingOpen(open?null:m.id)} style={{width:'100%',background:'transparent',border:'1px solid #ffffff15',color:'#6070a0',borderRadius:7,padding:'5px',cursor:'pointer',fontSize:11,fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}>
-                Ver por casa de apuestas {open?'▲':'▼'}
+                <span style={{marginLeft:'auto',fontSize:16,color:'#6070a0'}}>→</span>
               </button>
-            </div>
-            {open&&(
-              <div style={{background:'#080d18',borderTop:'1px solid #ffffff0a',padding:'10px 13px'}}>
-                <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:8}}>CUOTAS POR CASA</div>
-                {/* Header */}
-                <div style={{display:'grid',gridTemplateColumns:'80px 1fr 1fr 1fr',gap:4,marginBottom:6,fontSize:9,color:'#6070a0',letterSpacing:.5}}>
-                  <span>CASA</span><span style={{textAlign:'center'}}>LOCAL</span><span style={{textAlign:'center'}}>EMPATE</span><span style={{textAlign:'center'}}>VISITA</span>
-                </div>
-                {m.books.map((bk,j)=>(
-                  <div key={j} style={{display:'grid',gridTemplateColumns:'80px 1fr 1fr 1fr',gap:4,marginBottom:5,padding:'8px 8px',background:'#0d1220',borderRadius:8,border:`1px solid ${bk.color}22`,alignItems:'center'}}>
-                    <div style={{display:'flex',alignItems:'center',gap:6}}>
-                      <div style={{width:22,height:22,borderRadius:5,background:bk.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",flexShrink:0}}>{bk.logo}</div>
-                      <span style={{fontSize:10,fontWeight:600,color:'#dde8ff'}}>{bk.name}</span>
-                    </div>
-                    {[{v:bk.odds.h,best:bk.odds.h===best.h},{v:bk.odds.d,best:bk.odds.d===best.d},{v:bk.odds.a,best:bk.odds.a===best.a}].map((o,k)=>(
-                      <div key={k} style={{textAlign:'center',fontWeight:o.best?800:400,color:o.best?'#f0c040':'#8090b0',fontSize:14,fontFamily:"'Barlow Condensed',sans-serif",background:o.best?'#f0c04015':'transparent',borderRadius:5,padding:'2px 0'}}>
-                        {o.v.toFixed(2)}{o.best&&<span style={{fontSize:9,marginLeft:2}}>★</span>}
-                      </div>))}
-                  </div>))}
-                <div style={{fontSize:10,color:'#405070',marginTop:8,lineHeight:1.5}}>★ Mejor cuota disponible. Solo uso informativo. El juego puede causar adicción.</div>
-              </div>)}
-          </div>);})}
-      </div>}
-
-      {/* ══ PREDICCIONES ══ */}
-      {tab==='pred'&&<div className="fade">
-        {/* Sub-tabs */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:3,background:'#0d1220',padding:4,borderRadius:10,border:'1px solid #ffffff0a',marginBottom:10}}>
-          {[{id:'win',i:'⚽',l:'Win'},{id:'santi',i:'🎯',l:'Santi'},{id:'claude',i:'🤖',l:'Claude'},{id:'board',i:'🏅',l:'Marcador'}].map(pt=>(
-            <button key={pt.id} onClick={()=>setPTab(pt.id)} style={{padding:'7px 4px',border:'none',cursor:'pointer',borderRadius:7,background:pTab===pt.id?'#00d4aa':'transparent',color:pTab===pt.id?'#070b16':'#6070a0',fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:11,transition:'all .2s',display:'flex',flexDirection:'column',alignItems:'center',gap:2,outline:pTab!==pt.id&&pt.id===user.id?`1px solid ${user.color}44`:'none'}}>
-              <span style={{fontSize:15}}>{pt.i}</span>{pt.l}
-              {pt.id===user.id&&pTab!==pt.id&&<div style={{width:5,height:5,borderRadius:'50%',background:user.color}}/>}
-            </button>))}
-        </div>
-
-        {/* WIN / SANTI / CLAUDE — each enters their own predicted marcador */}
-        {(pTab==='win'||pTab==='santi'||pTab==='claude')&&(()=>{
-          const who=pTab;
-          const um=UM[who];
-          const isMe=who===user.id;
-          const isClaudeTab=who==='claude';
-          const canEdit=isMe&&!isClaudeTab; /* only the logged-in user can edit their own */
-          const myPredScores=who==='win'?predWin:who==='santi'?predSanti:predClaude;
-          const myPredResults=predResults[who]||{};
-          const done=Object.keys(myPredScores).filter(id=>{const s=myPredScores[id];return s&&s.hs!==''&&s.as!=='';}).length;
-          const cor=Object.keys(actual).filter(id=>myPredResults[id]&&myPredResults[id]===actual[id]).length;
-          const tot=Object.keys(actual).filter(id=>myPredResults[id]).length;
-          return(<div>
-            {/* Header */}
-            <div style={{background:'linear-gradient(135deg,#0a1628,#071022)',border:`1px solid ${isMe||isClaudeTab?um.c+'44':'#ffffff15'}`,borderRadius:10,padding:'11px 13px',marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            ); })}
+          </div>
+        ) : (
+          <div>
+            <button onClick={function(){ setSel(null); setErr(''); setPwd(''); }} style={{background:'transparent',border:'none',color:'#6070a0',cursor:'pointer',fontSize:11,letterSpacing:1,fontWeight:600,marginBottom:14,display:'flex',alignItems:'center',gap:4}}>← CAMBIAR USUARIO</button>
+            <div style={{display:'flex',alignItems:'center',gap:12,background:'#151d2e',borderRadius:10,padding:'11px 13px',marginBottom:18,borderLeft:'4px solid '+sel.color}}>
+              <span style={{fontSize:26}}>{sel.icon}</span>
               <div>
-                <div style={{fontSize:9,color:'#6070a0',letterSpacing:2,display:'flex',alignItems:'center',gap:6}}>
-                  {um.i} PREDICCIONES DE {um.l.toUpperCase()}
-                  {isMe&&!isClaudeTab&&<span style={{color:um.c,background:um.c+'22',padding:'1px 6px',borderRadius:4,fontSize:9}}>TÚ</span>}
-                  {isClaudeTab&&<span style={{color:'#00d4aa',background:'#00d4aa18',padding:'1px 6px',borderRadius:4,fontSize:9}}>IA</span>}
-                </div>
-                <div style={{fontSize:19,fontWeight:800,color:um.c,fontFamily:"'Barlow Condensed',sans-serif",marginTop:2}}>{done} / {UPCOMING.length} marcadores</div>
-              </div>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:9,color:'#6070a0'}}>Acertadas</div>
-                <div style={{fontSize:24,fontWeight:800,color:'#f0c040',fontFamily:"'Barlow Condensed',sans-serif"}}>{cor}<span style={{fontSize:13,color:'#6070a0',fontWeight:400}}>/{tot}</span></div>
+                <div style={{fontSize:15,fontWeight:700,color:'#fff'}}>{sel.label}</div>
+                <div style={{fontSize:10,color:sel.color,letterSpacing:1}}>{sel.role==='admin'?'ADMIN':'VIEWER'}</div>
               </div>
             </div>
-            {isClaudeTab&&<div style={{fontSize:12,color:'#8090b0',background:'#071828',border:'1px solid #00d4aa22',borderRadius:8,padding:'8px 12px',marginBottom:10,lineHeight:1.5}}>
-              🤖 Mis predicciones están pre-cargadas basadas en probabilidades estadísticas, H2H y forma reciente. Solo puedo predecir partidos <strong style={{color:'#00d4aa'}}>antes de que empiecen</strong>.
-            </div>}
-            {!isMe&&!isClaudeTab&&<div style={{fontSize:12,color:'#6070a0',background:'#0d1220',border:'1px solid #ffffff0a',borderRadius:8,padding:'7px 11px',marginBottom:9,textAlign:'center'}}>
-              👁️ Viendo predicciones de <strong style={{color:um.c}}>{um.l}</strong> — solo lectura
-            </div>}
-            {UPCOMING.map(g=>{
-              const sc=myPredScores[g.id]||{hs:'',as:''};
-              const predR=scoreToResult(sc.hs,sc.as);
-              const realR=actual[g.id];
-              const realSc=scores[g.id]||{hs:'',as:''};
-              const hasRealSc=realSc.hs!==''&&realSc.as!=='';
-              const ok=realR&&predR&&realR===predR;
-              const fail=realR&&predR&&realR!==predR;
-              const started=gameStarted(g.crStart);
-              const locked=isClaudeTab&&started&&(!sc.hs&&!sc.as);
-              const editable=canEdit&&!started||canEdit&&started; /* win/santi can edit any time; only Claude is time-locked */
-              const claudeEditable=false; /* Claude picks are always read-only */
-              const cellEdit=isClaudeTab?false:canEdit;
-              return(
-              <div key={g.id} style={{background:'#0d1220',border:`1px solid ${ok?'#00d4aa44':fail?'#ff445533':'#ffffff0a'}`,borderRadius:10,marginBottom:5,padding:'10px 12px',transition:'border-color .3s'}}>
-                {/* Match header */}
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-                  <div>
-                    <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.h].n}</span>
-                    <span style={{fontSize:11,color:'#6070a0',margin:'0 6px'}}>vs</span>
-                    <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.a].n}</span>
-                  </div>
-                  <div style={{display:'flex',alignItems:'center',gap:5}}>
-                    {hasRealSc&&<span style={{fontSize:12,fontWeight:800,color:'#dde8ff',background:'#151d2e',padding:'2px 8px',borderRadius:5,border:'1px solid #ffffff18',fontFamily:"'Barlow Condensed',sans-serif"}}>{realSc.hs}–{realSc.as}</span>}
-                    <span style={{fontSize:9,color:'#6070a0'}}>{g.date}</span>
-                    {realR&&predR&&<span style={{fontSize:15}}>{ok?'✅':'❌'}</span>}
-                  </div>
+            <div style={{fontSize:10,color:'#6070a0',letterSpacing:1.5,marginBottom:5}}>CONTRASEÑA</div>
+            <div style={{position:'relative',marginBottom:err?6:14}}>
+              <input ref={ref} type={sp?'text':'password'} value={pwd}
+                onChange={function(e){ setPwd(e.target.value); setErr(''); }}
+                onKeyDown={function(e){ if(e.key==='Enter') go(); }}
+                placeholder="Ingresa tu contraseña"
+                style={{width:'100%',padding:'10px 40px 10px 13px',background:'#070b16',border:'1px solid '+(err?'#ff4455':'#ffffff18'),borderRadius:9,color:'#dde8ff',fontSize:15,fontWeight:600,outline:'none'}}/>
+              <button onClick={function(){ setSp(!sp); }} style={{position:'absolute',right:11,top:'50%',transform:'translateY(-50%)',background:'transparent',border:'none',cursor:'pointer',color:'#6070a0',fontSize:15}}>{sp?'🙈':'👁️'}</button>
+            </div>
+            {err && <div style={{fontSize:12,color:'#ff4455',marginBottom:12}}>{err}</div>}
+            <button onClick={go} style={{width:'100%',padding:'11px',borderRadius:9,border:'none',cursor:'pointer',background:'linear-gradient(135deg,'+sel.color+','+sel.color+'cc)',color:'#fff',fontWeight:800,fontSize:16,letterSpacing:1,transition:'all .2s'}}
+              onMouseEnter={function(e){ e.currentTarget.style.transform='translateY(-1px)'; }}
+              onMouseLeave={function(e){ e.currentTarget.style.transform='none'; }}>ENTRAR AL TRACKER</button>
+          </div>
+        )}
+      </div>
+      <div style={{marginTop:18,fontSize:10,color:'#405070',letterSpacing:1}}>github.com/winreds · EPL Tracker CR</div>
+    </div>
+  );
+}
+
+/* ══════════════ ADMIN PANEL ══════════════ */
+function AdminPanel({onClose}) {
+  var [users, setUsers] = useState(getUsers());
+  var [eid, setEid] = useState(null);
+  var [np, setNp] = useState(''); var [cp, setCp] = useState('');
+  var [msg, setMsg] = useState(''); var [sp, setSp] = useState({});
+
+  function save(uid) {
+    if (np.length<6) { setMsg('❌ Mínimo 6 caracteres.'); return; }
+    if (np!==cp) { setMsg('❌ No coinciden.'); return; }
+    var u = users.map(function(x){ return x.id===uid ? Object.assign({},x,{pwd:np}) : x; });
+    setUsers(u); saveUsers(u); setEid(null); setNp(''); setCp('');
+    setMsg('✅ Contraseña guardada.'); setTimeout(function(){ setMsg(''); }, 3000);
+  }
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'#000000a0',zIndex:999,display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={function(e){ if(e.target===e.currentTarget) onClose(); }}>
+      <div style={{background:'#0d1220',border:'1px solid #ffffff15',borderRadius:16,padding:'22px',width:'100%',maxWidth:400,animation:'loginPop .3s ease',maxHeight:'90vh',overflowY:'auto'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
+          <div>
+            <div style={{fontSize:17,fontWeight:800,color:'#fff',letterSpacing:1}}>⚙️ PANEL ADMIN</div>
+            <div style={{fontSize:10,color:'#6070a0',marginTop:2}}>Gestión de usuarios</div>
+          </div>
+          <button onClick={onClose} style={{background:'#ffffff10',border:'none',borderRadius:8,color:'#8090b0',cursor:'pointer',padding:'6px 10px',fontSize:17}}>✕</button>
+        </div>
+        {msg && <div style={{fontSize:12,padding:'8px 12px',borderRadius:8,marginBottom:12,background:msg.includes('✅')?'#00d4aa18':'#ff445518',color:msg.includes('✅')?'#00d4aa':'#ff4455',border:'1px solid '+(msg.includes('✅')?'#00d4aa33':'#ff445533')}}>{msg}</div>}
+        {users.map(function(u) { return (
+          <div key={u.id} style={{background:'#151d2e',border:'1px solid #ffffff0a',borderRadius:11,padding:'13px',marginBottom:9,borderLeft:'4px solid '+u.color}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:eid===u.id?12:0}}>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <span style={{fontSize:22}}>{u.icon}</span>
+                <div>
+                  <div style={{fontSize:14,fontWeight:700,color:'#fff'}}>{u.label}</div>
+                  <div style={{fontSize:9,color:u.color,letterSpacing:1}}>{u.role==='admin'?'ADMIN':'VIEWER'}</div>
                 </div>
-                {/* Score prediction inputs */}
-                <div style={{display:'flex',alignItems:'center',gap:8}}>
-                  <span style={{fontSize:12,color:'#8090b0',flex:1,textAlign:'right'}}>{T[g.h].n}</span>
-                  <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
-                    <input type="number" min="0" max="20" value={sc.hs}
-                      onChange={e=>cellEdit&&setPredScore(who,g.id,'hs',e.target.value)}
-                      readOnly={!cellEdit}
-                      style={{width:46,padding:'6px',textAlign:'center',
-                        background:cellEdit?'#1a2540':'#111825',
-                        border:`1px solid ${predR&&sc.hs!==''?um.c+'55':'#ffffff18'}`,
-                        borderRadius:8,color:'#fff',fontSize:20,fontWeight:800,outline:'none',
-                        fontFamily:"'Barlow Condensed',sans-serif",cursor:cellEdit?'text':'default'}}/>
-                    <span style={{color:'#404a60',fontWeight:700,fontSize:20,fontFamily:"'Barlow Condensed',sans-serif"}}>—</span>
-                    <input type="number" min="0" max="20" value={sc.as}
-                      onChange={e=>cellEdit&&setPredScore(who,g.id,'as',e.target.value)}
-                      readOnly={!cellEdit}
-                      style={{width:46,padding:'6px',textAlign:'center',
-                        background:cellEdit?'#1a2540':'#111825',
-                        border:`1px solid ${predR&&sc.as!==''?um.c+'55':'#ffffff18'}`,
-                        borderRadius:8,color:'#fff',fontSize:20,fontWeight:800,outline:'none',
-                        fontFamily:"'Barlow Condensed',sans-serif",cursor:cellEdit?'text':'default'}}/>
-                  </div>
-                  <span style={{fontSize:12,color:'#8090b0',flex:1,textAlign:'left'}}>{T[g.a].n}</span>
-                </div>
-                {/* Auto derived result */}
-                {predR&&(
-                  <div style={{marginTop:7,display:'flex',justifyContent:'center',alignItems:'center',gap:8}}>
-                    <div style={{padding:'3px 14px',borderRadius:6,fontSize:11,fontWeight:700,letterSpacing:.5,
-                      background:predR==='h'?T[g.h].c+'33':predR==='a'?T[g.a].c+'33':'#f0c04033',
-                      color:predR==='h'?T[g.h].c:predR==='a'?T[g.a].c:'#f0c040',
-                      border:`1px solid ${predR==='h'?T[g.h].c+'55':predR==='a'?T[g.a].c+'55':'#f0c04055'}`}}>
-                      {predR==='h'?`Gana ${T[g.h].n}`:predR==='a'?`Gana ${T[g.a].n}`:'Empate'}
-                    </div>
-                    {realR&&<span style={{fontSize:11,color:ok?'#00d4aa':'#ff4455',fontWeight:700}}>{ok?'✓ Acertó':'✗ Falló'}</span>}
-                  </div>
-                )}
-                {cellEdit&&predR&&<button className="pb" onClick={()=>{const setter=who==='win'?setPredWin:setPredSanti;setter(p=>{const n={...p};delete n[g.id];return n;});}} style={{display:'block',margin:'6px auto 0',background:'#ff445518',color:'#ff4455',border:'1px solid #ff445540',padding:'3px 10px',fontSize:10}}>✕ Borrar</button>}
               </div>
+              <button onClick={function(){ setEid(eid===u.id?null:u.id); setNp(''); setCp(''); setMsg(''); }} style={{background:eid===u.id?'#ff445522':'#00d4aa22',color:eid===u.id?'#ff4455':'#00d4aa',border:'1px solid '+(eid===u.id?'#ff445544':'#00d4aa44'),borderRadius:7,padding:'4px 10px',cursor:'pointer',fontWeight:700,fontSize:11}}>{eid===u.id?'Cancelar':'🔑 Cambiar pwd'}</button>
+            </div>
+            {eid===u.id && (
+              <div style={{marginTop:9}}>
+                {[{l:'Nueva contraseña',v:np,fn:setNp,k:'np'},{l:'Confirmar',v:cp,fn:setCp,k:'cp'}].map(function(f) { return (
+                  <div key={f.k} style={{marginBottom:9}}>
+                    <div style={{fontSize:9,color:'#6070a0',letterSpacing:1.5,marginBottom:5}}>{f.l.toUpperCase()}</div>
+                    <div style={{position:'relative'}}>
+                      <input type={sp[f.k]?'text':'password'} value={f.v} onChange={function(e){ f.fn(e.target.value); setMsg(''); }} placeholder="Mínimo 6 caracteres"
+                        style={{width:'100%',padding:'9px 38px 9px 11px',background:'#070b16',border:'1px solid #ffffff18',borderRadius:8,color:'#dde8ff',fontSize:14,fontWeight:600,outline:'none'}}/>
+                      <button onClick={function(){ setSp(function(prev){ return Object.assign({},prev,{[f.k]:!prev[f.k]}); }); }} style={{position:'absolute',right:9,top:'50%',transform:'translateY(-50%)',background:'transparent',border:'none',cursor:'pointer',color:'#6070a0',fontSize:13}}>{sp[f.k]?'🙈':'👁️'}</button>
+                    </div>
+                  </div>
+                ); })}
+                <button onClick={function(){ save(u.id); }} style={{width:'100%',padding:'9px',borderRadius:8,border:'none',cursor:'pointer',background:'linear-gradient(135deg,'+u.color+','+u.color+'bb)',color:'#fff',fontWeight:800,fontSize:14,letterSpacing:1}}>GUARDAR</button>
+              </div>
+            )}
+          </div>
+        ); })}
+        <div style={{marginTop:4,padding:'9px 11px',background:'#070b16',borderRadius:8,border:'1px solid #ffffff08',fontSize:11,color:'#405070',lineHeight:1.6}}>
+          💡 Defaults: <strong>Win2026</strong> · <strong>Santi2026</strong>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════ TEAM DETAIL ══════════════ */
+function TeamDetail({code, onClose}) {
+  var team = T[code];
+  var st = ST.find(function(s){ return s.a===code; });
+  var form = FORM[code]||[];
+  var recentGames = RECENT.filter(function(m){ return m.h===code||m.a===code; });
+  if (!team||!st) return null;
+  var gd = team.gf-team.ga;
+  var pct = Math.round(st.w/st.gp*100);
+  return (
+    <div style={{position:'fixed',inset:0,background:'#000000b0',zIndex:900,display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={function(e){ if(e.target===e.currentTarget) onClose(); }}>
+      <div style={{background:'#0d1220',border:'2px solid '+team.c+'44',borderRadius:'16px 16px 0 0',padding:'20px',width:'100%',maxWidth:820,animation:'loginPop .3s ease',maxHeight:'85vh',overflowY:'auto'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <div style={{width:10,height:44,borderRadius:4,background:team.c}}/>
+            <div>
+              <div style={{fontSize:24,fontWeight:800,color:'#fff',letterSpacing:1}}>{team.n}</div>
+              <div style={{fontSize:11,color:'#6070a0',letterSpacing:1}}>Posición #{st.r} · {st.pts} puntos</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{background:'#ffffff10',border:'none',borderRadius:8,color:'#8090b0',cursor:'pointer',padding:'6px 10px',fontSize:18}}>✕</button>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginBottom:14}}>
+          {[{l:'Jugados',v:st.gp,c:'#dde8ff'},{l:'Ganados',v:st.w,c:'#00d4aa'},{l:'Empatados',v:st.d,c:'#f0c040'},{l:'Perdidos',v:st.l,c:'#ff4455'},{l:'Goles A Favor',v:team.gf,c:'#00d4aa'},{l:'Goles En Contra',v:team.ga,c:'#ff4455'},{l:'Dif. Goles',v:(gd>0?'+':'')+gd,c:gd>0?'#00d4aa':gd<0?'#ff4455':'#f0c040'},{l:'% Victoria',v:pct+'%',c:'#6CABDD'}].map(function(s,i) { return (
+            <div key={i} style={{background:'#151d2e',borderRadius:9,padding:'9px 8px',textAlign:'center',border:'1px solid #ffffff08'}}>
+              <div style={{fontSize:20,fontWeight:800,color:s.c}}>{s.v}</div>
+              <div style={{fontSize:9,color:'#6070a0',marginTop:2}}>{s.l}</div>
+            </div>
+          ); })}
+        </div>
+        <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:7}}>ÚLTIMAS 4 JORNADAS</div>
+        <div style={{display:'flex',gap:6,marginBottom:14}}>
+          {form.map(function(r,i) { return (
+            <div key={i} style={{flex:1,textAlign:'center',padding:'8px 4px',borderRadius:8,background:r==='W'?'#00d4aa20':r==='L'?'#ff445520':'#f0c04020',border:'1px solid '+fC(r)+'44'}}>
+              <div style={{fontSize:18,fontWeight:800,color:fC(r)}}>{r}</div>
+              <div style={{fontSize:9,color:'#6070a0'}}>{i===0?'Últ.':i===1?'Ant.':'-'+(i+1)}</div>
+            </div>
+          ); })}
+        </div>
+        {recentGames.length>0 && (
+          <div>
+            <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:7}}>PARTIDOS RECIENTES</div>
+            {recentGames.map(function(m,i) {
+              var parts = m.s.split('-').map(Number); var hw=parts[0]>parts[1], aw=parts[1]>parts[0];
+              var isHome=m.h===code; var won=(isHome&&hw)||(!isHome&&aw); var lost=(isHome&&aw)||(!isHome&&hw);
+              return (
+                <div key={i} style={{display:'flex',alignItems:'center',background:'#151d2e',border:'1px solid #ffffff08',borderRadius:8,marginBottom:3,padding:'7px 10px',gap:6}}>
+                  <div style={{width:3,height:20,borderRadius:2,background:won?'#00d4aa':lost?'#ff4455':'#f0c040'}}/>
+                  <span style={{flex:1,textAlign:'right',fontWeight:m.h===code?700:500,color:m.h===code?'#fff':'#6070a0',fontSize:13}}>{T[m.h].n}</span>
+                  <div style={{padding:'3px 9px',background:'#0d1220',borderRadius:6,fontWeight:700,fontSize:13,color:'#fff',minWidth:48,textAlign:'center',border:'1px solid #ffffff12'}}>{m.s}</div>
+                  <span style={{flex:1,textAlign:'left',fontWeight:m.a===code?700:500,color:m.a===code?'#fff':'#6070a0',fontSize:13}}>{T[m.a].n}</span>
+                  <div style={{fontSize:10,color:'#6070a0',width:46,textAlign:'right'}}>{m.d}</div>
+                </div>
               );
             })}
-          </div>);
-        })()}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
-        {/* MARCADOR — real results (admin only) */}
-        {pTab==='board'&&(()=>{
-          const sc2={win:calcScore('win'),santi:calcScore('santi'),claude:calcScore('claude')};
-          const ranked=Object.entries(sc2).sort((a,b)=>b[1].pct-a[1].pct);
-          return(<div>
-            <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:6}}>MARCADORES REALES</div>
-            <div style={{fontSize:11,color:'#6070a0',background:'#0d1220',border:'1px solid #ffffff0a',borderRadius:8,padding:'8px 11px',marginBottom:8}}>
-              {user.role==='admin'?'✅ Admin — ingresa el marcador real. El resultado (G/E/P) se calcula solo y se refleja en todos los tabs.':'👁️ Solo admins pueden ingresar marcadores reales.'}
-            </div>
-            {UPCOMING.map(g=>{
-              const s=scores[g.id]||{hs:'',as:''};const r=scoreToResult(s.hs,s.as);const canEdit=user.role==='admin';
-              const allPreds={win:predResults.win[g.id],santi:predResults.santi[g.id],claude:predResults.claude[g.id]};
-              return(
-              <div key={g.id} style={{background:'#0d1220',border:`1px solid ${r?'#00d4aa33':'#ffffff0a'}`,borderRadius:9,marginBottom:5,padding:'9px 11px'}}>
-                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:7}}>
-                  <div style={{flex:1,textAlign:'right',fontSize:13,fontWeight:700,color:'#fff',lineHeight:1.2}}>{T[g.h].n}</div>
-                  <div style={{display:'flex',alignItems:'center',gap:5,flexShrink:0}}>
-                    <input type="number" min="0" max="20" value={s.hs} onChange={e=>canEdit&&setScore(g.id,'hs',e.target.value)} readOnly={!canEdit}
-                      style={{width:44,padding:'5px',textAlign:'center',background:canEdit?'#151d2e':'#0d1220',border:`1px solid ${r&&s.hs!==''?'#00d4aa55':'#ffffff18'}`,borderRadius:7,color:'#fff',fontSize:18,fontWeight:800,outline:'none',fontFamily:"'Barlow Condensed',sans-serif",cursor:canEdit?'text':'default'}}/>
-                    <span style={{color:'#6070a0',fontWeight:700,fontSize:18,fontFamily:"'Barlow Condensed',sans-serif"}}>-</span>
-                    <input type="number" min="0" max="20" value={s.as} onChange={e=>canEdit&&setScore(g.id,'as',e.target.value)} readOnly={!canEdit}
-                      style={{width:44,padding:'5px',textAlign:'center',background:canEdit?'#151d2e':'#0d1220',border:`1px solid ${r&&s.as!==''?'#00d4aa55':'#ffffff18'}`,borderRadius:7,color:'#fff',fontSize:18,fontWeight:800,outline:'none',fontFamily:"'Barlow Condensed',sans-serif",cursor:canEdit?'text':'default'}}/>
-                  </div>
-                  <div style={{flex:1,textAlign:'left',fontSize:13,fontWeight:700,color:'#fff',lineHeight:1.2}}>{T[g.a].n}</div>
-                </div>
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:r?7:0}}>
-                  <span style={{fontSize:10,color:'#6070a0'}}>{g.date} · {g.time} CR</span>
-                  <div style={{display:'flex',alignItems:'center',gap:5}}>
-                    {r&&<div style={{padding:'3px 12px',borderRadius:6,fontSize:11,fontWeight:700,background:r==='h'?T[g.h].c+'33':r==='a'?T[g.a].c+'33':'#f0c04033',color:r==='h'?T[g.h].c:r==='a'?T[g.a].c:'#f0c040',border:`1px solid ${r==='h'?T[g.h].c+'55':r==='a'?T[g.a].c+'55':'#f0c04055'}`}}>
-                      {r==='h'?`Gana ${T[g.h].n}`:r==='a'?`Gana ${T[g.a].n}`:'Empate'}
-                    </div>}
-                    {canEdit&&r&&<button className="pb" onClick={()=>setScores(p=>{const n={...p};delete n[g.id];return n;})} style={{background:'#ff445518',color:'#ff4455',border:'1px solid #ff445540',padding:'4px 8px',fontSize:11}}>✕</button>}
-                  </div>
-                </div>
-                {r&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}}>
-                  {Object.entries(UM).map(([uid,um])=>{
-                    const pr=allPreds[uid];const ok=pr&&pr===r;const fail=pr&&pr!==r;
-                    const ps=uid==='win'?predWin[g.id]:uid==='santi'?predSanti[g.id]:predClaude[g.id];
-                    const psStr=ps&&ps.hs!==''&&ps.as!==''?`${ps.hs}–${ps.as}`:'—';
-                    return(<div key={uid} style={{padding:'5px 6px',borderRadius:7,textAlign:'center',background:ok?'#00d4aa12':fail?'#ff445512':'#151d2e',border:`1px solid ${ok?'#00d4aa33':fail?'#ff445533':'#ffffff0a'}`}}>
-                      <div style={{fontSize:10,color:um.c,fontWeight:700}}>{um.i} {um.l}</div>
-                      <div style={{fontSize:13,fontWeight:800,color:'#dde8ff',fontFamily:"'Barlow Condensed',sans-serif"}}>{psStr}</div>
-                      <div style={{fontSize:10,color:ok?'#00d4aa':fail?'#ff4455':'#6070a0',fontWeight:700}}>{pr?pL(pr):'Sin pred.'} {ok?'✓':fail?'✗':''}</div>
-                    </div>);
-                  })}
-                </div>}
-              </div>);})}
-            <div style={{fontSize:9,color:'#f0c040',letterSpacing:2,margin:'14px 0 8px'}}>🏅 TABLA DE ACIERTOS</div>
-            {ranked.map(([name,s],i)=>{const m=UM[name];return(
-              <div key={name} style={{background:i===0?'linear-gradient(135deg,#1a1400,#2a1e00)':'#0d1220',border:`1px solid ${i===0?'#f0c04055':'#ffffff0a'}`,borderRadius:11,marginBottom:6,padding:'12px 15px',display:'flex',alignItems:'center',gap:11}}>
-                <div style={{fontSize:24,lineHeight:1}}>{med(i)}</div>
-                <div style={{width:4,height:40,borderRadius:2,background:m.c,flexShrink:0}}/>
-                <div style={{flex:1}}>
-                  <div style={{fontWeight:700,fontSize:15,color:i===0?'#f0c040':'#dde8ff',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:.5}}>{m.i} {m.l}{name===user.id&&<span style={{marginLeft:7,fontSize:9,color:m.c,background:m.c+'22',padding:'1px 6px',borderRadius:4}}>TÚ</span>}</div>
-                  <div style={{fontSize:11,color:'#6070a0',marginTop:2}}>{s.w} acertadas de {s.tot} con resultado real</div>
-                </div>
-                <div style={{textAlign:'center'}}>
-                  <div style={{fontSize:28,fontWeight:800,lineHeight:1,color:i===0?'#f0c040':m.c,fontFamily:"'Barlow Condensed',sans-serif"}}>{s.pct}%</div>
-                  <div style={{fontSize:10,color:'#6070a0'}}>precisión</div>
-                </div>
-              </div>);})}
-            {Object.keys(actual).length===0&&<div style={{textAlign:'center',color:'#6070a0',fontSize:13,padding:'18px',background:'#0d1220',borderRadius:10,border:'1px solid #ffffff0a',lineHeight:1.6}}>☝️ Ingresa un marcador real para calcular aciertos.</div>}
-          </div>);
-        })()}
-      </div>}
+/* ══════════════ MAIN APP ══════════════ */
+function MainApp({user, onLogout}) {
+  var [tab, setTab] = useState('inicio');
+  var [pTab, setPTab] = useState(['win','santi'].includes(user.id)?user.id:'win');
+  var [histY, setHistY] = useState('2025-26');
+  var [oh2h, setOh2h] = useState(null);
+  var [predWin,   setPredWin  ] = useState(function(){ return loadPredScores('win'); });
+  var [predSanti, setPredSanti] = useState(function(){ return loadPredScores('santi'); });
+  var [predClaude,setPredClaude] = useState(function(){ return loadPredScores('claude'); });
+  var [scores, setScores] = useState(loadScores);
+  var [adminOpen, setAdminOpen] = useState(false);
+  var [menuOpen,  setMenuOpen]  = useState(false);
+  var [teamDetail, setTeamDetail] = useState(null);
+  var [scorerY, setScorerY] = useState('2025-26');
+  var [scorerView, setScorerView] = useState('scorers');
+  var [bettingOpen, setBettingOpen] = useState(null);
 
-      {/* ══ COMPARAR ══ */}
-      {tab==='comparar'&&<div className="fade">
-        <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:4}}>COMPARACIÓN DE PREDICCIONES · JOR. 29-30</div>
-        <div style={{fontSize:11,color:'#6070a0',marginBottom:12,lineHeight:1.5}}>
-          Ve las predicciones de todos lado a lado. El resultado real aparece cuando un Admin ingrese el marcador en Predicciones → Marcador.
-        </div>
-        {/* Legend */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:5,marginBottom:12}}>
-          {Object.entries(UM).map(([uid,um])=>(
-            <div key={uid} style={{background:'#0d1220',border:`1px solid ${um.c}44`,borderRadius:9,padding:'8px',textAlign:'center'}}>
-              <div style={{fontSize:18}}>{um.i}</div>
-              <div style={{fontSize:13,fontWeight:700,color:um.c,fontFamily:"'Barlow Condensed',sans-serif"}}>{um.l}</div>
-              <div style={{fontSize:10,color:'#6070a0',marginTop:2}}>
-                {(()=>{const s=calcScore(uid);return s.tot?`${s.w}/${s.tot} · ${s.pct}%`:'Sin resultados aún';})()}
-              </div>
+  useEffect(function(){ savePredScores('win',  predWin);   }, [predWin]);
+  useEffect(function(){ savePredScores('santi', predSanti); }, [predSanti]);
+  useEffect(function(){ savePredScores('claude',predClaude);}, [predClaude]);
+  useEffect(function(){ localStorage.setItem('eplcr_scores',JSON.stringify(scores)); }, [scores]);
+
+  var actual = useMemo(function() {
+    var a = {};
+    Object.keys(scores).forEach(function(id) {
+      var r = scoreToResult(scores[id].hs, scores[id].as);
+      if (r!==null) a[id] = r;
+    });
+    return a;
+  }, [scores]);
+
+  var predResults = useMemo(function() {
+    function mapUser(psMap) {
+      var out = {};
+      Object.keys(psMap).forEach(function(id) {
+        var r = scoreToResult(psMap[id].hs, psMap[id].as);
+        if (r!==null) out[id] = r;
+      });
+      return out;
+    }
+    return {win:mapUser(predWin), santi:mapUser(predSanti), claude:mapUser(predClaude)};
+  }, [predWin, predSanti, predClaude]);
+
+  function setScore(id, field, val) {
+    var clean = val.replace(/[^0-9]/g,'').slice(0,2);
+    setScores(function(p) { var n=Object.assign({},p); n[id]=Object.assign({},{hs:'',as:''},n[id]||{}); n[id][field]=clean; return n; });
+  }
+  function setPredScore(who, id, field, val) {
+    var clean = val.replace(/[^0-9]/g,'').slice(0,2);
+    var setter = who==='win'?setPredWin:who==='santi'?setPredSanti:setPredClaude;
+    setter(function(p) { var n=Object.assign({},p); n[id]=Object.assign({},{hs:'',as:''},n[id]||{}); n[id][field]=clean; return n; });
+  }
+  function calcScore(who) {
+    var pr = predResults[who]||{};
+    var w=0, tot=0;
+    Object.keys(actual).forEach(function(id) { if(pr[id]){ tot++; if(pr[id]===actual[id]) w++; } });
+    return {w:w, tot:tot, pct:tot?Math.round(w/tot*100):0};
+  }
+
+  var NAV = [
+    {id:'inicio',  icon:'🏠', l:'Inicio'},
+    {id:'results', icon:'📅', l:'Historial'},
+    {id:'fixtures',icon:'🔮', l:'Próximos'},
+    {id:'table',   icon:'📊', l:'Tabla'},
+    {id:'scoring', icon:'⚽', l:'Goleadores'},
+    {id:'betting', icon:'💰', l:'Apuestas'},
+    {id:'pred',    icon:'🎯', l:'Predicciones'},
+    {id:'comparar',icon:'📋', l:'Comparar'},
+  ];
+
+  return (
+    <div style={{fontFamily:"'Rajdhani',sans-serif",background:'#070b16',minHeight:'100vh',color:'#dde8ff'}}>
+      {adminOpen && <AdminPanel onClose={function(){ setAdminOpen(false); }}/>}
+      {teamDetail && <TeamDetail code={teamDetail} onClose={function(){ setTeamDetail(null); }}/>}
+
+      {/* DROPDOWN */}
+      {menuOpen && (
+        <div style={{position:'fixed',inset:0,zIndex:500}} onClick={function(){ setMenuOpen(false); }}>
+          <div style={{position:'absolute',top:58,right:10,background:'#0d1220',border:'1px solid #ffffff15',borderRadius:12,padding:7,minWidth:200,animation:'loginPop .2s ease',boxShadow:'0 10px 40px #00000080'}} onClick={function(e){ e.stopPropagation(); }}>
+            <div style={{padding:'9px 11px',borderBottom:'1px solid #ffffff0a',marginBottom:5}}>
+              <div style={{fontSize:10,color:'#6070a0',letterSpacing:1}}>SESIÓN ACTIVA</div>
+              <div style={{fontSize:15,fontWeight:700,color:'#fff',marginTop:2}}>{user.icon} {user.label}</div>
+              <div style={{fontSize:10,color:user.color,letterSpacing:1}}>{user.role==='admin'?'ADMIN':'VIEWER'}</div>
             </div>
-          ))}
+            {user.role==='admin' && (
+              <button onClick={function(){ setAdminOpen(true); setMenuOpen(false); }} style={{width:'100%',display:'flex',alignItems:'center',gap:9,padding:'8px 11px',background:'transparent',border:'none',cursor:'pointer',borderRadius:8,color:'#dde8ff',fontWeight:600,fontSize:13,transition:'background .15s'}}
+                onMouseEnter={function(e){ e.currentTarget.style.background='#ffffff0a'; }}
+                onMouseLeave={function(e){ e.currentTarget.style.background='transparent'; }}>
+                <span>⚙️</span> Panel Admin
+              </button>
+            )}
+            <button onClick={function(){ clearSession(); onLogout(); }} style={{width:'100%',display:'flex',alignItems:'center',gap:9,padding:'8px 11px',background:'transparent',border:'none',cursor:'pointer',borderRadius:8,color:'#ff4455',fontWeight:600,fontSize:13,transition:'background .15s'}}
+              onMouseEnter={function(e){ e.currentTarget.style.background='#ff445512'; }}
+              onMouseLeave={function(e){ e.currentTarget.style.background='transparent'; }}>
+              <span>🚪</span> Cerrar sesión
+            </button>
+          </div>
         </div>
-        {UPCOMING.map(g=>{
-          const realR=actual[g.id];
-          const realSc=scores[g.id]||{hs:'',as:''};
-          const hasRealSc=realSc.hs!==''&&realSc.as!=='';
-          const pScores={win:predWin[g.id]||{hs:'',as:''},santi:predSanti[g.id]||{hs:'',as:''},claude:predClaude[g.id]||{hs:'',as:''}};
-          const pResults={win:predResults.win[g.id],santi:predResults.santi[g.id],claude:predResults.claude[g.id]};
-          return(
-          <div key={g.id} style={{background:'#0d1220',border:`1px solid ${realR?'#ffffff15':'#ffffff08'}`,borderRadius:11,marginBottom:8,overflow:'hidden'}}>
-            {/* Match header */}
-            <div style={{padding:'9px 12px',background:'#111826',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      )}
+
+      {/* HEADER */}
+      <header style={{background:'linear-gradient(135deg,#0b1828,#060e1c)',borderBottom:'2px solid #00d4aa33',padding:'9px 13px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:200}}>
+        <div style={{display:'flex',alignItems:'center',gap:9}}>
+          <div style={{width:38,height:38,borderRadius:9,background:'linear-gradient(135deg,#00d4aa,#0090aa)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:15,fontWeight:900,color:'#070b16',letterSpacing:-1}}>EPL</div>
+          <div>
+            <div style={{fontSize:17,fontWeight:800,color:'#fff',letterSpacing:1,lineHeight:1}}>EPL TRACKER <span style={{color:'#00d4aa'}}>CR</span></div>
+            <div style={{fontSize:9,color:'#8090b0',letterSpacing:2}}>PREMIER LEAGUE 2025–26</div>
+          </div>
+        </div>
+        <button onClick={function(){ setMenuOpen(!menuOpen); }} style={{display:'flex',alignItems:'center',gap:7,background:'#151d2e',border:'1px solid '+user.color+'44',borderRadius:9,padding:'5px 10px',cursor:'pointer',transition:'all .2s'}}
+          onMouseEnter={function(e){ e.currentTarget.style.borderColor=user.color+'88'; }}
+          onMouseLeave={function(e){ e.currentTarget.style.borderColor=user.color+'44'; }}>
+          <span style={{fontSize:17}}>{user.icon}</span>
+          <div style={{textAlign:'left'}}>
+            <div style={{fontSize:12,fontWeight:700,color:'#fff',lineHeight:1}}>{user.label}</div>
+            <div style={{fontSize:9,color:user.color,letterSpacing:1}}>{user.role==='admin'?'ADMIN':'VIEWER'}</div>
+          </div>
+          <span style={{fontSize:11,color:'#6070a0',marginLeft:2}}>▾</span>
+        </button>
+      </header>
+
+      {/* NAV */}
+      <nav style={{display:'flex',gap:2,padding:'6px 7px 5px',background:'#0d1220',borderBottom:'1px solid #ffffff0a',overflowX:'auto',position:'sticky',top:57,zIndex:190}}>
+        {NAV.map(function(n) { return (
+          <button key={n.id} onClick={function(){ setTab(n.id); }} style={{flex:'0 0 auto',display:'flex',flexDirection:'column',alignItems:'center',gap:1,padding:'5px 11px',border:'none',cursor:'pointer',borderRadius:8,background:tab===n.id?'#00d4aa':'transparent',color:tab===n.id?'#070b16':'#6070a0',fontWeight:700,fontSize:11,letterSpacing:.5,transition:'all .2s',whiteSpace:'nowrap'}}>
+            <span style={{fontSize:14}}>{n.icon}</span>{n.l}
+          </button>
+        ); })}
+      </nav>
+
+      <main style={{padding:'10px 10px',paddingBottom:50}}>
+
+        {/* ── INICIO ── */}
+        {tab==='inicio' && (
+          <div className="fade">
+            <div style={{background:'linear-gradient(135deg,#1c0a0a,#2a1010)',border:'1px solid #EF010755',borderRadius:12,padding:'13px 15px',marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <div>
-                <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.h].n}</span>
-                <span style={{fontSize:11,color:'#6070a0',margin:'0 6px'}}>vs</span>
-                <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.a].n}</span>
+                <div style={{fontSize:9,color:'#EF010799',letterSpacing:2,marginBottom:3}}>🏆 LÍDER 2025-26</div>
+                <div style={{fontSize:23,fontWeight:800,color:'#fff',letterSpacing:1}}>Arsenal FC</div>
+                <div style={{fontSize:12,color:'#EF010799',marginTop:2}}>67 pts · 30 PJ · +7 sobre Man City</div>
               </div>
-              <div style={{display:'flex',alignItems:'center',gap:7}}>
-                {hasRealSc&&(
-                  <div style={{display:'flex',alignItems:'center',gap:5}}>
-                    <span style={{fontSize:10,color:'#6070a0'}}>Real:</span>
-                    <span style={{fontSize:16,fontWeight:800,color:'#00d4aa',fontFamily:"'Barlow Condensed',sans-serif",background:'#00d4aa18',padding:'2px 10px',borderRadius:6,border:'1px solid #00d4aa33'}}>{realSc.hs}–{realSc.as}</span>
-                    <span style={{fontSize:10,color:realR==='h'?T[g.h].c:realR==='a'?T[g.a].c:'#f0c040',fontWeight:700}}>{realR==='h'?T[g.h].n:realR==='a'?T[g.a].n:'Empate'}</span>
-                  </div>
-                )}
-                {!hasRealSc&&<span style={{fontSize:9,color:'#6070a0',background:'#151d2e',padding:'2px 7px',borderRadius:4}}>{g.date} · {g.time}</span>}
-              </div>
+              <div style={{fontSize:44}}>🔴</div>
             </div>
-            {/* 3-col predictions */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:1}}>
-              {Object.entries(UM).map(([uid,um])=>{
-                const ps=pScores[uid];const pr=pResults[uid];
-                const hasPs=ps.hs!==''&&ps.as!=='';
-                const ok=realR&&pr&&realR===pr;const fail=realR&&pr&&realR!==pr;
-                return(
-                <div key={uid} style={{padding:'10px 8px',textAlign:'center',
-                  background:ok?'#00d4aa0a':fail?'#ff44550a':'transparent',
-                  borderTop:`1px solid ${ok?'#00d4aa22':fail?'#ff445522':'#ffffff08'}`}}>
-                  <div style={{fontSize:10,color:um.c,fontWeight:700,marginBottom:5}}>{um.i} {um.l}</div>
-                  {hasPs?(
-                    <>
-                      <div style={{fontSize:22,fontWeight:800,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1}}>{ps.hs} – {ps.as}</div>
-                      {pr&&<div style={{fontSize:10,marginTop:4,padding:'2px 8px',borderRadius:5,display:'inline-block',
-                        background:pr==='h'?T[g.h].c+'22':pr==='a'?T[g.a].c+'22':'#f0c04022',
-                        color:pr==='h'?T[g.h].c:pr==='a'?T[g.a].c:'#f0c040',fontWeight:700}}>
-                        {pr==='h'?T[g.h].n.split(' ')[0]:pr==='a'?T[g.a].n.split(' ')[0]:'Empate'}
-                      </div>}
-                      {realR&&<div style={{fontSize:16,marginTop:4}}>{ok?'✅':'❌'}</div>}
-                    </>
-                  ):(
-                    <div style={{fontSize:11,color:'#404a60',marginTop:4}}>Sin pred.</div>
-                  )}
-                </div>);
+            <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,margin:'9px 0 6px'}}>ÚLTIMOS RESULTADOS · JOR. 29</div>
+            {RECENT.map(function(m,i) {
+              var parts=m.s.split('-').map(Number); var hw=parts[0]>parts[1], aw=parts[1]>parts[0];
+              return (
+                <div key={i} className="rh" style={{display:'flex',alignItems:'center',background:i%2===0?'#0d1220':'#0a101c',border:'1px solid #ffffff08',borderRadius:8,marginBottom:3,padding:'7px 10px',gap:6}}>
+                  <span style={{fontSize:10,color:'#6070a0',width:50}}>{m.d}</span>
+                  <span style={{flex:1,textAlign:'right',fontWeight:hw?700:500,color:hw?'#fff':'#6070a0',fontSize:13}}>{T[m.h].n}</span>
+                  <div style={{padding:'3px 10px',background:'#151d2e',borderRadius:6,fontWeight:700,fontSize:14,color:'#fff',minWidth:50,textAlign:'center',border:'1px solid #ffffff15'}}>{m.s}</div>
+                  <span style={{flex:1,textAlign:'left',fontWeight:aw?700:500,color:aw?'#fff':'#6070a0',fontSize:13}}>{T[m.a].n}</span>
+                  <div style={{width:17,height:17,borderRadius:'50%',background:hw?T[m.h].c:aw?T[m.a].c:'#f0c040',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,color:'#fff',fontWeight:700}}>{hw?'L':aw?'V':'E'}</div>
+                </div>
+              );
+            })}
+            <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,margin:'14px 0 7px'}}>SELECCIONA UN EQUIPO</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5}}>
+              {Object.keys(T).map(function(code) {
+                var team=T[code]; var st=ST.find(function(s){ return s.a===code; });
+                return (
+                  <button key={code} onClick={function(){ setTeamDetail(code); }} style={{background:'#0d1220',border:'1px solid '+team.c+'33',borderRadius:9,padding:'8px 5px',cursor:'pointer',transition:'all .2s',display:'flex',flexDirection:'column',alignItems:'center',gap:3}}
+                    onMouseEnter={function(e){ e.currentTarget.style.borderColor=team.c+'88'; }}
+                    onMouseLeave={function(e){ e.currentTarget.style.borderColor=team.c+'33'; }}>
+                    <div style={{width:4,height:18,borderRadius:2,background:team.c}}/>
+                    <div style={{fontSize:10,fontWeight:700,color:'#dde8ff',textAlign:'center',lineHeight:1.2}}>{team.n}</div>
+                    <div style={{fontSize:11,fontWeight:800,color:'#00d4aa'}}>{st?st.pts:0}<span style={{fontSize:9,color:'#6070a0',fontWeight:400}}> pts</span></div>
+                    <div style={{display:'flex',gap:2}}>
+                      {(FORM[code]||[]).map(function(r,i){ return <div key={i} style={{width:6,height:6,borderRadius:'50%',background:fC(r)}}/>; })}
+                    </div>
+                  </button>
+                );
               })}
             </div>
           </div>
-          );
-        })}
-      </div>}
-    </main>
-    <footer style={{textAlign:'center',padding:'9px',borderTop:'1px solid #ffffff08',fontSize:10,color:'#405070',letterSpacing:1}}>EPL TRACKER CR · github.com/winreds · 2026</footer>
-  </div>
+        )}
+
+        {/* ── HISTORIAL ── */}
+        {tab==='results' && (
+          <div className="fade">
+            <div style={{display:'flex',gap:5,marginBottom:10,flexWrap:'wrap'}}>
+              {Object.keys(HIST).map(function(y) { return (
+                <button key={y} onClick={function(){ setHistY(y); }} style={{padding:'5px 13px',border:'1px solid '+(histY===y?'transparent':'#ffffff15'),cursor:'pointer',borderRadius:8,background:histY===y?'#00d4aa':'#0d1220',color:histY===y?'#070b16':'#6070a0',fontWeight:700,fontSize:13,transition:'all .2s'}}>{y}</button>
+              ); })}
+            </div>
+            {(function() {
+              var h=HIST[histY]; var cur=histY==='2025-26';
+              return (
+                <div>
+                  <div style={{background:cur?'linear-gradient(135deg,#0a1628,#071022)':'linear-gradient(135deg,#1a1400,#2a1e00)',border:'1px solid '+(cur?'#00d4aa44':'#f0c04044'),borderRadius:12,padding:'12px 15px',marginBottom:10}}>
+                    {cur ? (
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <div>
+                          <div style={{fontSize:9,color:'#8090b0',letterSpacing:2,marginBottom:3}}>⚽ EN CURSO</div>
+                          <div style={{fontSize:21,fontWeight:800,color:'#00d4aa'}}>Arsenal lidera</div>
+                          <div style={{fontSize:12,color:'#00d4aa99'}}>{h.leaderPts} pts · Jornada 30/38</div>
+                        </div>
+                        <div style={{fontSize:38}}>📊</div>
+                      </div>
+                    ) : (
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <div>
+                          <div style={{fontSize:9,color:'#f0c04099',letterSpacing:2,marginBottom:3}}>🏆 CAMPEÓN</div>
+                          <div style={{fontSize:21,fontWeight:800,color:'#f0c040'}}>{T[h.champ]?T[h.champ].n:h.champ}</div>
+                          <div style={{fontSize:12,color:'#f0c04099'}}>{h.pts} pts · {h.scorer}</div>
+                        </div>
+                        <div style={{fontSize:38}}>🏆</div>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:6}}>PARTIDOS DESTACADOS</div>
+                  {h.m.map(function(m,i) {
+                    var parts=m.s.split('-').map(Number); var hw=parts[0]>parts[1], aw=parts[1]>parts[0];
+                    return (
+                      <div key={i} style={{background:'#0d1220',border:'1px solid #ffffff08',borderRadius:9,marginBottom:4,padding:'9px 13px'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:4}}>
+                          <span style={{flex:1,textAlign:'right',fontWeight:hw?700:500,fontSize:13,color:hw?'#fff':'#6070a0'}}>{T[m.h]?T[m.h].n:m.h}</span>
+                          <div style={{padding:'3px 11px',background:'#151d2e',borderRadius:7,fontWeight:700,fontSize:14,color:'#fff',border:'1px solid #ffffff15',minWidth:52,textAlign:'center'}}>{m.s}</div>
+                          <span style={{flex:1,textAlign:'left',fontWeight:aw?700:500,fontSize:13,color:aw?'#fff':'#6070a0'}}>{T[m.a]?T[m.a].n:m.a}</span>
+                        </div>
+                        <div style={{textAlign:'center',fontSize:11,color:'#6070a0',fontStyle:'italic'}}>{m.n}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* ── PRÓXIMOS ── */}
+        {tab==='fixtures' && (
+          <div className="fade">
+            <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:8}}>JORNADA 29-30 · 14-16 MAR 2026 · HORA CR</div>
+            {UPCOMING.map(function(m) {
+              var open=oh2h===m.id;
+              var maxP=Math.max(m.prob.h,m.prob.a,m.prob.d);
+              var fav=m.prob.h===maxP?T[m.h].n:m.prob.a===maxP?T[m.a].n:'Empate';
+              var started=gameStarted(m.crStart);
+              var h2hW={[m.h]:0,[m.a]:0,D:0};
+              m.h2h.forEach(function(hh){ if(hh.w===m.h) h2hW[m.h]++; else if(hh.w===m.a) h2hW[m.a]++; else if(hh.w==='D') h2hW.D++; });
+              return (
+                <div key={m.id} style={{background:'#0d1220',border:'1px solid #ffffff0a',borderRadius:11,marginBottom:7,overflow:'hidden'}}>
+                  <div style={{padding:'10px 11px'}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}>
+                        <span style={{fontSize:11,color:'#6070a0',fontWeight:600}}>{m.date} · {m.time} CR</span>
+                        <span style={{fontSize:9,background:started?'#ff445522':'#00d4aa18',color:started?'#ff4455':'#00d4aa',border:'1px solid '+(started?'#ff445544':'#00d4aa33'),borderRadius:4,padding:'1px 6px',letterSpacing:1}}>{started?'JUGADO':'PRÓXIMO'}</span>
+                      </div>
+                      <button onClick={function(){ setOh2h(open?null:m.id); }} style={{background:'transparent',border:'1px solid #ffffff15',color:'#6070a0',borderRadius:5,padding:'2px 9px',cursor:'pointer',fontSize:11,fontWeight:700}}>H2H {open?'▲':'▼'}</button>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:7}}>
+                      <div style={{flex:1,textAlign:'right'}}>
+                        <div style={{fontWeight:700,fontSize:14,color:m.prob.h===maxP?'#fff':'#6070a0'}}>{T[m.h].n}</div>
+                        <div style={{fontSize:9,color:'#6070a0'}}>🏠 Local</div>
+                      </div>
+                      <div style={{padding:'4px 9px',background:'#151d2e',borderRadius:8,fontWeight:800,fontSize:12,color:'#8090b0',border:'1px solid #ffffff15',letterSpacing:1}}>VS</div>
+                      <div style={{flex:1,textAlign:'left'}}>
+                        <div style={{fontWeight:700,fontSize:14,color:m.prob.a===maxP?'#fff':'#6070a0'}}>{T[m.a].n}</div>
+                        <div style={{fontSize:9,color:'#6070a0'}}>✈️ Visita</div>
+                      </div>
+                    </div>
+                    <div style={{background:'#151d2e',borderRadius:7,padding:'6px 10px',marginBottom:7,display:'flex',alignItems:'center',justifyContent:'space-between',border:'1px solid #ffffff08'}}>
+                      <span style={{fontSize:9,color:'#6070a0',letterSpacing:1}}>ÚLTIMO H2H</span>
+                      <span style={{fontSize:12,fontWeight:700,color:'#dde8ff'}}>{m.lastH2H}</span>
+                    </div>
+                    {[{l:T[m.h].n,v:m.prob.h,c:T[m.h].c},{l:'Empate',v:m.prob.d,c:'#f0c040'},{l:T[m.a].n,v:m.prob.a,c:T[m.a].c}].map(function(p,j) { return (
+                      <div key={j} style={{marginBottom:4}}>
+                        <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:2}}>
+                          <span style={{color:p.v===maxP?'#dde8ff':'#6070a0'}}>{p.l}</span>
+                          <span style={{fontWeight:700,color:p.v===maxP?'#fff':'#6070a0'}}>{p.v}%</span>
+                        </div>
+                        <div style={{height:5,background:'#1a2236',borderRadius:3,overflow:'hidden'}}>
+                          <div style={{height:'100%',width:p.v+'%',background:p.v===maxP?p.c:p.c+'66',borderRadius:3,transition:'width .7s ease'}}/>
+                        </div>
+                      </div>
+                    ); })}
+                    <div style={{marginTop:7,fontSize:11,color:'#6070a0',textAlign:'center',background:'#151d2e',padding:'5px',borderRadius:6}}>📈 Favorito: <strong style={{color:'#00d4aa'}}>{fav}</strong> ({maxP}%)</div>
+                  </div>
+                  {open && (
+                    <div style={{background:'#080d18',borderTop:'1px solid #ffffff0a',padding:'10px 13px'}}>
+                      <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:8}}>HISTORIAL DE ENFRENTAMIENTOS</div>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr auto 1fr',gap:6,marginBottom:10,background:'#0d1220',borderRadius:9,padding:'10px 12px',border:'1px solid #ffffff0a'}}>
+                        <div style={{textAlign:'center'}}><div style={{fontSize:22,fontWeight:800,color:T[m.h].c}}>{h2hW[m.h]}</div><div style={{fontSize:9,color:'#6070a0'}}>{T[m.h].n}</div></div>
+                        <div style={{textAlign:'center',display:'flex',flexDirection:'column',justifyContent:'center',gap:2}}><div style={{fontSize:18,fontWeight:800,color:'#f0c040'}}>{h2hW.D}</div><div style={{fontSize:9,color:'#6070a0'}}>Empates</div></div>
+                        <div style={{textAlign:'center'}}><div style={{fontSize:22,fontWeight:800,color:T[m.a].c}}>{h2hW[m.a]}</div><div style={{fontSize:9,color:'#6070a0'}}>{T[m.a].n}</div></div>
+                      </div>
+                      {m.h2h.map(function(hh,j) { return (
+                        <div key={j} style={{display:'flex',gap:9,marginBottom:4,fontSize:12,padding:'5px 8px',background:'#0d1220',borderRadius:6,borderLeft:'3px solid '+(hh.w===m.h?T[m.h].c:hh.w===m.a?T[m.a].c:hh.w==='D'?'#f0c040':'#ffffff15')}}>
+                          <span style={{color:'#8090b0',width:40,fontWeight:600,background:'#151d2e',borderRadius:4,padding:'1px 4px',textAlign:'center',fontSize:10}}>{hh.s}</span>
+                          <span style={{color:'#dde8ff',flex:1}}>{hh.r}</span>
+                          {hh.w&&hh.w!=='D'&&<span style={{fontSize:10,color:hh.w===m.h?T[m.h].c:T[m.a].c,fontWeight:700}}>{hh.w===m.h?T[m.h].n:T[m.a].n}</span>}
+                          {hh.w==='D'&&<span style={{fontSize:10,color:'#f0c040',fontWeight:700}}>Empate</span>}
+                        </div>
+                      ); })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── TABLA ── */}
+        {tab==='table' && (
+          <div className="fade">
+            <div style={{background:'#0d1220',borderRadius:11,overflow:'hidden',border:'1px solid #ffffff0a'}}>
+              <div style={{display:'grid',gridTemplateColumns:'27px 6px 1fr 30px 24px 24px 24px 32px auto',gap:3,padding:'7px 9px',background:'#111826',fontSize:9,color:'#6070a0',letterSpacing:.5,fontWeight:700}}>
+                <span>#</span><span/><span>EQUIPO</span><span style={{textAlign:'center'}}>PJ</span><span style={{textAlign:'center',color:'#00d4aa'}}>G</span><span style={{textAlign:'center',color:'#f0c040'}}>E</span><span style={{textAlign:'center',color:'#ff4455'}}>P</span><span style={{textAlign:'right',color:'#00d4aa'}}>PTS</span><span style={{textAlign:'right',paddingRight:4}}>FORMA</span>
+              </div>
+              {ST.map(function(s,i) {
+                var b=bdg(s.r); var form=FORM[s.a]||[];
+                return (
+                  <div key={i} className="rh" onClick={function(){ setTeamDetail(s.a); }} style={{display:'grid',gridTemplateColumns:'27px 6px 1fr 30px 24px 24px 24px 32px auto',gap:3,padding:'6px 9px',alignItems:'center',fontSize:12,background:i%2===0?'#0d1220':'#0a101c',borderLeft:'3px solid '+(b.c!=='transparent'?b.c:'transparent')}}>
+                    <span style={{fontWeight:700,color:s.r<=4?'#00d4aa':s.r>=18?'#ff4455':'#6070a0',fontSize:11}}>{s.r}</span>
+                    <div style={{width:6,height:18,borderRadius:2,background:T[s.a].c}}/>
+                    <span style={{fontWeight:600,fontSize:12}}>{T[s.a].n}</span>
+                    <span style={{textAlign:'center',color:'#6070a0',fontSize:11}}>{s.gp}</span>
+                    <span style={{textAlign:'center',color:'#00d4aa',fontSize:11,fontWeight:700}}>{s.w}</span>
+                    <span style={{textAlign:'center',color:'#f0c040',fontSize:11}}>{s.d}</span>
+                    <span style={{textAlign:'center',color:'#ff4455',fontSize:11}}>{s.l}</span>
+                    <span style={{textAlign:'right',fontWeight:800,fontSize:13,color:s.r===1?'#f0c040':s.r<=4?'#00d4aa':'#dde8ff'}}>{s.pts}</span>
+                    <div style={{display:'flex',gap:2,justifyContent:'flex-end',paddingRight:4}}>
+                      {form.map(function(r,j){ return <div key={j} style={{width:14,height:14,borderRadius:3,background:fC(r),display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,fontWeight:800,color:'#000'}}>{r}</div>; })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{display:'flex',gap:12,marginTop:8,fontSize:11,color:'#6070a0',padding:'0 4px',flexWrap:'wrap'}}>
+              {[['#00d4aa','Champions'],['#f0c040','Europa'],['#ff4455','Descenso'],['#dde8ff','→ Toca para ficha']].map(function(x) { return (
+                <div key={x[1]} style={{display:'flex',alignItems:'center',gap:4}}><div style={{width:8,height:8,borderRadius:2,background:x[0]}}/><span>{x[1]}</span></div>
+              ); })}
+            </div>
+          </div>
+        )}
+
+        {/* ── GOLEADORES ── */}
+        {tab==='scoring' && (
+          <div className="fade">
+            <div style={{display:'flex',gap:5,marginBottom:10,flexWrap:'wrap'}}>
+              {Object.keys(SCORERS).map(function(y) { return (
+                <button key={y} onClick={function(){ setScorerY(y); }} style={{padding:'5px 13px',border:'1px solid '+(scorerY===y?'transparent':'#ffffff15'),cursor:'pointer',borderRadius:8,background:scorerY===y?'#00d4aa':'#0d1220',color:scorerY===y?'#070b16':'#6070a0',fontWeight:700,fontSize:13,transition:'all .2s'}}>{y}</button>
+              ); })}
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,background:'#0d1220',padding:4,borderRadius:10,border:'1px solid #ffffff0a',marginBottom:12}}>
+              {[{id:'scorers',icon:'⚽',l:'Goleadores'},{id:'assists',icon:'🅰️',l:'Asistidores'}].map(function(v) { return (
+                <button key={v.id} onClick={function(){ setScorerView(v.id); }} style={{padding:'8px',border:'none',cursor:'pointer',borderRadius:8,background:scorerView===v.id?'#00d4aa':'transparent',color:scorerView===v.id?'#070b16':'#6070a0',fontWeight:700,fontSize:13,transition:'all .2s',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                  <span>{v.icon}</span>{v.l}
+                </button>
+              ); })}
+            </div>
+            {(function() {
+              var data = scorerView==='scorers' ? SCORERS[scorerY].scorers : SCORERS[scorerY].assists;
+              var maxVal = scorerView==='scorers' ? data[0].goals : data[0].ast;
+              var label = scorerView==='scorers' ? 'goles' : 'asistencias';
+              return (
+                <div>
+                  <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:8}}>TOP {scorerView==='scorers'?'GOLEADORES':'ASISTIDORES'} · {scorerY}</div>
+                  {data.map(function(p,i) {
+                    var val = scorerView==='scorers'?p.goals:p.ast;
+                    var pct = Math.round(val/maxVal*100);
+                    var tc = T[p.team] ? T[p.team].c : '#6070a0';
+                    return (
+                      <div key={i} style={{background:i%2===0?'#0d1220':'#0a101c',border:'1px solid #ffffff08',borderRadius:9,marginBottom:4,padding:'10px 12px'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
+                          <div style={{width:26,height:26,borderRadius:'50%',background:i===0?'#f0c04030':i===1?'#c0c0c020':i===2?'#cd7f3220':'#ffffff10',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>{med(i)}</div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:15,fontWeight:700,color:'#fff',letterSpacing:.5}}>{p.nat} {p.name}</div>
+                            <div style={{fontSize:10,color:'#6070a0',marginTop:1}}>{T[p.team]?T[p.team].n:p.team}</div>
+                          </div>
+                          <div style={{textAlign:'right'}}>
+                            <div style={{fontSize:24,fontWeight:800,color:i===0?'#f0c040':tc,lineHeight:1}}>{val}</div>
+                            <div style={{fontSize:9,color:'#6070a0'}}>{label}</div>
+                          </div>
+                        </div>
+                        <div style={{height:4,background:'#1a2236',borderRadius:2,overflow:'hidden'}}>
+                          <div style={{height:'100%',width:pct+'%',background:i===0?'#f0c040':tc,borderRadius:2,transition:'width .7s ease'}}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* ── APUESTAS ── */}
+        {tab==='betting' && (
+          <div className="fade">
+            <div style={{background:'linear-gradient(135deg,#0a1a0a,#0f2010)',border:'1px solid #00AA5533',borderRadius:11,padding:'11px 14px',marginBottom:12}}>
+              <div style={{fontSize:9,color:'#00AA55',letterSpacing:2,marginBottom:4}}>💰 CASAS DE APUESTAS · JOR. 29-30</div>
+              <div style={{fontSize:12,color:'#8090b0',lineHeight:1.5}}>Cuotas decimales. <span style={{color:'#f0c040',fontWeight:700}}>★</span> = mejor cuota entre las 3 casas.</div>
+            </div>
+            <div style={{display:'flex',gap:6,marginBottom:12,flexWrap:'wrap'}}>
+              {[{name:'Bet365',logo:'B3',color:'#00A651'},{name:'1xBet',logo:'1X',color:'#F5A623'},{name:'Betcris',logo:'BC',color:'#E8001A'}].map(function(b) { return (
+                <div key={b.name} style={{display:'flex',alignItems:'center',gap:6,background:'#0d1220',border:'1px solid '+b.color+'44',borderRadius:8,padding:'5px 10px'}}>
+                  <div style={{width:22,height:22,borderRadius:5,background:b.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:'#fff'}}>{b.logo}</div>
+                  <span style={{fontSize:12,fontWeight:600,color:'#dde8ff'}}>{b.name}</span>
+                </div>
+              ); })}
+            </div>
+            {BETTING.map(function(m) {
+              var open=bettingOpen===m.id;
+              var best={h:Math.max.apply(null,m.books.map(function(b){ return b.odds.h; })),d:Math.max.apply(null,m.books.map(function(b){ return b.odds.d; })),a:Math.max.apply(null,m.books.map(function(b){ return b.odds.a; }))};
+              var minOdd=Math.min(best.h,best.a);
+              return (
+                <div key={m.id} style={{background:'#0d1220',border:'1px solid #ffffff0a',borderRadius:11,marginBottom:7,overflow:'hidden'}}>
+                  <div style={{padding:'10px 12px'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                      <div style={{flex:1,textAlign:'right'}}><div style={{fontWeight:700,fontSize:14,color:'#fff'}}>{T[m.h].n}</div><div style={{fontSize:9,color:'#6070a0'}}>🏠 Local</div></div>
+                      <div style={{padding:'3px 9px',background:'#151d2e',borderRadius:7,fontWeight:800,fontSize:12,color:'#6070a0',border:'1px solid #ffffff15',letterSpacing:1}}>VS</div>
+                      <div style={{flex:1,textAlign:'left'}}><div style={{fontWeight:700,fontSize:14,color:'#fff'}}>{T[m.a].n}</div><div style={{fontSize:9,color:'#6070a0'}}>✈️ Visita</div></div>
+                    </div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:5,marginBottom:8}}>
+                      {[{label:T[m.h].n.split(' ')[0],val:best.h,col:T[m.h].c,tag:'Local',isFav:best.h===minOdd},{label:'Empate',val:best.d,col:'#f0c040',tag:'X',isFav:false},{label:T[m.a].n.split(' ')[0],val:best.a,col:T[m.a].c,tag:'Visita',isFav:best.a===minOdd}].map(function(o,j) { return (
+                        <div key={j} style={{background:'#151d2e',borderRadius:8,padding:'8px 6px',textAlign:'center',border:'1px solid '+(o.isFav?o.col+'55':'#ffffff0a'),position:'relative'}}>
+                          {o.isFav&&<div style={{position:'absolute',top:-6,right:-4,fontSize:9,background:'#f0c040',color:'#000',borderRadius:4,padding:'0 4px',fontWeight:800}}>FAV</div>}
+                          <div style={{fontSize:9,color:'#6070a0',marginBottom:3}}>{o.tag}</div>
+                          <div style={{fontSize:22,fontWeight:800,color:o.col,lineHeight:1}}>{o.val.toFixed(2)}</div>
+                          <div style={{fontSize:9,color:'#6070a0',marginTop:2}}>mejor cuota</div>
+                        </div>
+                      ); })}
+                    </div>
+                    <button onClick={function(){ setBettingOpen(open?null:m.id); }} style={{width:'100%',background:'transparent',border:'1px solid #ffffff15',color:'#6070a0',borderRadius:7,padding:'5px',cursor:'pointer',fontSize:11,fontWeight:700}}>Ver por casa {open?'▲':'▼'}</button>
+                  </div>
+                  {open && (
+                    <div style={{background:'#080d18',borderTop:'1px solid #ffffff0a',padding:'10px 13px'}}>
+                      <div style={{display:'grid',gridTemplateColumns:'80px 1fr 1fr 1fr',gap:4,marginBottom:6,fontSize:9,color:'#6070a0',letterSpacing:.5}}>
+                        <span>CASA</span><span style={{textAlign:'center'}}>LOCAL</span><span style={{textAlign:'center'}}>EMPATE</span><span style={{textAlign:'center'}}>VISITA</span>
+                      </div>
+                      {m.books.map(function(bk,j) { return (
+                        <div key={j} style={{display:'grid',gridTemplateColumns:'80px 1fr 1fr 1fr',gap:4,marginBottom:5,padding:'8px 8px',background:'#0d1220',borderRadius:8,border:'1px solid '+bk.color+'22',alignItems:'center'}}>
+                          <div style={{display:'flex',alignItems:'center',gap:6}}>
+                            <div style={{width:22,height:22,borderRadius:5,background:bk.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:800,color:'#fff'}}>{bk.logo}</div>
+                            <span style={{fontSize:10,fontWeight:600,color:'#dde8ff'}}>{bk.name}</span>
+                          </div>
+                          {[{v:bk.odds.h,isBest:bk.odds.h===best.h},{v:bk.odds.d,isBest:bk.odds.d===best.d},{v:bk.odds.a,isBest:bk.odds.a===best.a}].map(function(o,k) { return (
+                            <div key={k} style={{textAlign:'center',fontWeight:o.isBest?800:400,color:o.isBest?'#f0c040':'#8090b0',fontSize:14,background:o.isBest?'#f0c04015':'transparent',borderRadius:5,padding:'2px 0'}}>
+                              {o.v.toFixed(2)}{o.isBest&&<span style={{fontSize:9,marginLeft:2}}>★</span>}
+                            </div>
+                          ); })}
+                        </div>
+                      ); })}
+                      <div style={{fontSize:10,color:'#405070',marginTop:8,lineHeight:1.5}}>★ Mejor cuota. Solo uso informativo. El juego puede causar adicción.</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── PREDICCIONES ── */}
+        {tab==='pred' && (
+          <div className="fade">
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:3,background:'#0d1220',padding:4,borderRadius:10,border:'1px solid #ffffff0a',marginBottom:10}}>
+              {[{id:'win',i:'⚽',l:'Win'},{id:'santi',i:'🎯',l:'Santi'},{id:'claude',i:'🤖',l:'Claude'},{id:'board',i:'🏅',l:'Marcador'}].map(function(pt) { return (
+                <button key={pt.id} onClick={function(){ setPTab(pt.id); }} style={{padding:'7px 4px',border:'none',cursor:'pointer',borderRadius:7,background:pTab===pt.id?'#00d4aa':'transparent',color:pTab===pt.id?'#070b16':'#6070a0',fontWeight:700,fontSize:11,transition:'all .2s',display:'flex',flexDirection:'column',alignItems:'center',gap:2,outline:pTab!==pt.id&&pt.id===user.id?'1px solid '+user.color+'44':'none'}}>
+                  <span style={{fontSize:15}}>{pt.i}</span>{pt.l}
+                  {pt.id===user.id&&pTab!==pt.id&&<div style={{width:5,height:5,borderRadius:'50%',background:user.color}}/>}
+                </button>
+              ); })}
+            </div>
+
+            {/* WIN / SANTI / CLAUDE — predicted scores */}
+            {(pTab==='win'||pTab==='santi'||pTab==='claude') && (function() {
+              var who = pTab;
+              var um = UM[who];
+              var isMe = who===user.id;
+              var isClaudeTab = who==='claude';
+              var canEdit = !isClaudeTab && isMe;
+              var myPS = who==='win'?predWin:who==='santi'?predSanti:predClaude;
+              var myPR = predResults[who]||{};
+              var done = Object.keys(myPS).filter(function(id){ var s=myPS[id]; return s&&s.hs!==''&&s.as!==''; }).length;
+              var cor = Object.keys(actual).filter(function(id){ return myPR[id]&&myPR[id]===actual[id]; }).length;
+              var tot = Object.keys(actual).filter(function(id){ return myPR[id]; }).length;
+              return (
+                <div>
+                  <div style={{background:'linear-gradient(135deg,#0a1628,#071022)',border:'1px solid '+(isMe||isClaudeTab?um.c+'44':'#ffffff15'),borderRadius:10,padding:'11px 13px',marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <div>
+                      <div style={{fontSize:9,color:'#6070a0',letterSpacing:2,display:'flex',alignItems:'center',gap:6}}>
+                        {um.i} PREDICCIONES DE {um.l.toUpperCase()}
+                        {isMe&&!isClaudeTab&&<span style={{color:um.c,background:um.c+'22',padding:'1px 6px',borderRadius:4,fontSize:9}}>TÚ</span>}
+                        {isClaudeTab&&<span style={{color:'#00d4aa',background:'#00d4aa18',padding:'1px 6px',borderRadius:4,fontSize:9}}>IA</span>}
+                      </div>
+                      <div style={{fontSize:19,fontWeight:800,color:um.c,marginTop:2}}>{done} / {UPCOMING.length} marcadores</div>
+                    </div>
+                    <div style={{textAlign:'right'}}>
+                      <div style={{fontSize:9,color:'#6070a0'}}>Acertadas</div>
+                      <div style={{fontSize:24,fontWeight:800,color:'#f0c040'}}>{cor}<span style={{fontSize:13,color:'#6070a0',fontWeight:400}}>/{tot}</span></div>
+                    </div>
+                  </div>
+                  {isClaudeTab && <div style={{fontSize:12,color:'#8090b0',background:'#071828',border:'1px solid #00d4aa22',borderRadius:8,padding:'8px 12px',marginBottom:10,lineHeight:1.5}}>🤖 Mis predicciones están pre-cargadas. Los picks de Claude son de solo lectura.</div>}
+                  {!isMe&&!isClaudeTab && <div style={{fontSize:12,color:'#6070a0',background:'#0d1220',border:'1px solid #ffffff0a',borderRadius:8,padding:'7px 11px',marginBottom:9,textAlign:'center'}}>👁️ Viendo predicciones de <strong style={{color:um.c}}>{um.l}</strong> — solo lectura</div>}
+                  {UPCOMING.map(function(g) {
+                    var sc = myPS[g.id]||{hs:'',as:''};
+                    var predR = scoreToResult(sc.hs, sc.as);
+                    var realR = actual[g.id];
+                    var realSc = scores[g.id]||{hs:'',as:''};
+                    var hasRealSc = realSc.hs!==''&&realSc.as!=='';
+                    var ok = realR&&predR&&realR===predR;
+                    var fail = realR&&predR&&realR!==predR;
+                    return (
+                      <div key={g.id} style={{background:'#0d1220',border:'1px solid '+(ok?'#00d4aa44':fail?'#ff445533':'#ffffff0a'),borderRadius:10,marginBottom:5,padding:'10px 12px',transition:'border-color .3s'}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                          <div>
+                            <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.h].n}</span>
+                            <span style={{fontSize:11,color:'#6070a0',margin:'0 6px'}}>vs</span>
+                            <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.a].n}</span>
+                          </div>
+                          <div style={{display:'flex',alignItems:'center',gap:5}}>
+                            {hasRealSc&&<span style={{fontSize:12,fontWeight:800,color:'#dde8ff',background:'#151d2e',padding:'2px 8px',borderRadius:5,border:'1px solid #ffffff18'}}>{realSc.hs}–{realSc.as}</span>}
+                            <span style={{fontSize:9,color:'#6070a0'}}>{g.date}</span>
+                            {realR&&predR&&<span style={{fontSize:15}}>{ok?'✅':'❌'}</span>}
+                          </div>
+                        </div>
+                        <div style={{display:'flex',alignItems:'center',gap:8}}>
+                          <span style={{fontSize:12,color:'#8090b0',flex:1,textAlign:'right'}}>{T[g.h].n}</span>
+                          <div style={{display:'flex',alignItems:'center',gap:6}}>
+                            <input type="number" min="0" max="20" value={sc.hs}
+                              onChange={function(e){ if(canEdit) setPredScore(who,g.id,'hs',e.target.value); }}
+                              readOnly={!canEdit}
+                              style={{width:46,padding:'6px',textAlign:'center',background:canEdit?'#1a2540':'#111825',border:'1px solid '+(predR&&sc.hs!==''?um.c+'55':'#ffffff18'),borderRadius:8,color:'#fff',fontSize:20,fontWeight:800,outline:'none',cursor:canEdit?'text':'default'}}/>
+                            <span style={{color:'#404a60',fontWeight:700,fontSize:20}}>—</span>
+                            <input type="number" min="0" max="20" value={sc.as}
+                              onChange={function(e){ if(canEdit) setPredScore(who,g.id,'as',e.target.value); }}
+                              readOnly={!canEdit}
+                              style={{width:46,padding:'6px',textAlign:'center',background:canEdit?'#1a2540':'#111825',border:'1px solid '+(predR&&sc.as!==''?um.c+'55':'#ffffff18'),borderRadius:8,color:'#fff',fontSize:20,fontWeight:800,outline:'none',cursor:canEdit?'text':'default'}}/>
+                          </div>
+                          <span style={{fontSize:12,color:'#8090b0',flex:1,textAlign:'left'}}>{T[g.a].n}</span>
+                        </div>
+                        {predR && (
+                          <div style={{marginTop:7,display:'flex',justifyContent:'center',alignItems:'center',gap:8}}>
+                            <div style={{padding:'3px 14px',borderRadius:6,fontSize:11,fontWeight:700,background:predR==='h'?T[g.h].c+'33':predR==='a'?T[g.a].c+'33':'#f0c04033',color:predR==='h'?T[g.h].c:predR==='a'?T[g.a].c:'#f0c040',border:'1px solid '+(predR==='h'?T[g.h].c+'55':predR==='a'?T[g.a].c+'55':'#f0c04055')}}>
+                              {predR==='h'?('Gana '+T[g.h].n):predR==='a'?('Gana '+T[g.a].n):'Empate'}
+                            </div>
+                            {realR&&<span style={{fontSize:11,color:ok?'#00d4aa':'#ff4455',fontWeight:700}}>{ok?'✓ Acertó':'✗ Falló'}</span>}
+                          </div>
+                        )}
+                        {canEdit&&predR && (
+                          <button className="pb" onClick={function(){ var setter=who==='win'?setPredWin:setPredSanti; setter(function(p){ var n=Object.assign({},p); delete n[g.id]; return n; }); }} style={{display:'block',margin:'6px auto 0',background:'#ff445518',color:'#ff4455',border:'1px solid #ff445540',padding:'3px 10px',fontSize:10}}>✕ Borrar</button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {/* MARCADOR */}
+            {pTab==='board' && (function() {
+              var sc2 = {win:calcScore('win'),santi:calcScore('santi'),claude:calcScore('claude')};
+              var ranked = Object.entries(sc2).sort(function(a,b){ return b[1].pct-a[1].pct; });
+              return (
+                <div>
+                  <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:6}}>MARCADORES REALES</div>
+                  <div style={{fontSize:11,color:'#6070a0',background:'#0d1220',border:'1px solid #ffffff0a',borderRadius:8,padding:'8px 11px',marginBottom:8}}>
+                    {user.role==='admin'?'✅ Admin — ingresa el marcador real. El resultado se calcula automáticamente.':'👁️ Solo admins pueden ingresar marcadores reales.'}
+                  </div>
+                  {UPCOMING.map(function(g) {
+                    var s=scores[g.id]||{hs:'',as:''}; var r=scoreToResult(s.hs,s.as); var isAdmin=user.role==='admin';
+                    var allPreds={win:predResults.win[g.id],santi:predResults.santi[g.id],claude:predResults.claude[g.id]};
+                    return (
+                      <div key={g.id} style={{background:'#0d1220',border:'1px solid '+(r?'#00d4aa33':'#ffffff0a'),borderRadius:9,marginBottom:5,padding:'9px 11px'}}>
+                        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:7}}>
+                          <div style={{flex:1,textAlign:'right',fontSize:13,fontWeight:700,color:'#fff',lineHeight:1.2}}>{T[g.h].n}</div>
+                          <div style={{display:'flex',alignItems:'center',gap:5}}>
+                            <input type="number" min="0" max="20" value={s.hs} onChange={function(e){ if(isAdmin) setScore(g.id,'hs',e.target.value); }} readOnly={!isAdmin}
+                              style={{width:44,padding:'5px',textAlign:'center',background:isAdmin?'#151d2e':'#0d1220',border:'1px solid '+(r&&s.hs!==''?'#00d4aa55':'#ffffff18'),borderRadius:7,color:'#fff',fontSize:18,fontWeight:800,outline:'none',cursor:isAdmin?'text':'default'}}/>
+                            <span style={{color:'#6070a0',fontWeight:700,fontSize:18}}>-</span>
+                            <input type="number" min="0" max="20" value={s.as} onChange={function(e){ if(isAdmin) setScore(g.id,'as',e.target.value); }} readOnly={!isAdmin}
+                              style={{width:44,padding:'5px',textAlign:'center',background:isAdmin?'#151d2e':'#0d1220',border:'1px solid '+(r&&s.as!==''?'#00d4aa55':'#ffffff18'),borderRadius:7,color:'#fff',fontSize:18,fontWeight:800,outline:'none',cursor:isAdmin?'text':'default'}}/>
+                          </div>
+                          <div style={{flex:1,textAlign:'left',fontSize:13,fontWeight:700,color:'#fff',lineHeight:1.2}}>{T[g.a].n}</div>
+                        </div>
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:r?7:0}}>
+                          <span style={{fontSize:10,color:'#6070a0'}}>{g.date} · {g.time} CR</span>
+                          <div style={{display:'flex',alignItems:'center',gap:5}}>
+                            {r&&<div style={{padding:'3px 12px',borderRadius:6,fontSize:11,fontWeight:700,background:r==='h'?T[g.h].c+'33':r==='a'?T[g.a].c+'33':'#f0c04033',color:r==='h'?T[g.h].c:r==='a'?T[g.a].c:'#f0c040',border:'1px solid '+(r==='h'?T[g.h].c+'55':r==='a'?T[g.a].c+'55':'#f0c04055')}}>{r==='h'?('Gana '+T[g.h].n):r==='a'?('Gana '+T[g.a].n):'Empate'}</div>}
+                            {isAdmin&&r&&<button className="pb" onClick={function(){ setScores(function(p){ var n=Object.assign({},p); delete n[g.id]; return n; }); }} style={{background:'#ff445518',color:'#ff4455',border:'1px solid #ff445540',padding:'4px 8px',fontSize:11}}>✕</button>}
+                          </div>
+                        </div>
+                        {r && (
+                          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}}>
+                            {Object.keys(UM).map(function(uid) {
+                              var um2=UM[uid]; var pr=allPreds[uid]; var ok2=pr&&pr===r; var fail2=pr&&pr!==r;
+                              var ps=uid==='win'?predWin[g.id]:uid==='santi'?predSanti[g.id]:predClaude[g.id];
+                              var psStr=ps&&ps.hs!==''&&ps.as!==''?(ps.hs+'–'+ps.as):'—';
+                              return (
+                                <div key={uid} style={{padding:'5px 6px',borderRadius:7,textAlign:'center',background:ok2?'#00d4aa12':fail2?'#ff445512':'#151d2e',border:'1px solid '+(ok2?'#00d4aa33':fail2?'#ff445533':'#ffffff0a')}}>
+                                  <div style={{fontSize:10,color:um2.c,fontWeight:700}}>{um2.i} {um2.l}</div>
+                                  <div style={{fontSize:13,fontWeight:800,color:'#dde8ff'}}>{psStr}</div>
+                                  <div style={{fontSize:10,color:ok2?'#00d4aa':fail2?'#ff4455':'#6070a0',fontWeight:700}}>{pr?pL(pr):'Sin pred.'} {ok2?'✓':fail2?'✗':''}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div style={{fontSize:9,color:'#f0c040',letterSpacing:2,margin:'14px 0 8px'}}>🏅 TABLA DE ACIERTOS</div>
+                  {ranked.map(function(entry, i) {
+                    var name=entry[0]; var s=entry[1]; var m2=UM[name];
+                    return (
+                      <div key={name} style={{background:i===0?'linear-gradient(135deg,#1a1400,#2a1e00)':'#0d1220',border:'1px solid '+(i===0?'#f0c04055':'#ffffff0a'),borderRadius:11,marginBottom:6,padding:'12px 15px',display:'flex',alignItems:'center',gap:11}}>
+                        <div style={{fontSize:24,lineHeight:1}}>{med(i)}</div>
+                        <div style={{width:4,height:40,borderRadius:2,background:m2.c}}/>
+                        <div style={{flex:1}}>
+                          <div style={{fontWeight:700,fontSize:15,color:i===0?'#f0c040':'#dde8ff',letterSpacing:.5}}>{m2.i} {m2.l}{name===user.id&&<span style={{marginLeft:7,fontSize:9,color:m2.c,background:m2.c+'22',padding:'1px 6px',borderRadius:4}}>TÚ</span>}</div>
+                          <div style={{fontSize:11,color:'#6070a0',marginTop:2}}>{s.w} acertadas de {s.tot} con resultado real</div>
+                        </div>
+                        <div style={{textAlign:'center'}}>
+                          <div style={{fontSize:28,fontWeight:800,lineHeight:1,color:i===0?'#f0c040':m2.c}}>{s.pct}%</div>
+                          <div style={{fontSize:10,color:'#6070a0'}}>precisión</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {Object.keys(actual).length===0&&<div style={{textAlign:'center',color:'#6070a0',fontSize:13,padding:'18px',background:'#0d1220',borderRadius:10,border:'1px solid #ffffff0a',lineHeight:1.6}}>☝️ Ingresa un marcador real para calcular aciertos.</div>}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* ── COMPARAR ── */}
+        {tab==='comparar' && (
+          <div className="fade">
+            <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:4}}>COMPARACIÓN DE PREDICCIONES · JOR. 29-30</div>
+            <div style={{fontSize:11,color:'#6070a0',marginBottom:12,lineHeight:1.5}}>Ve las predicciones de todos lado a lado. El resultado real aparece cuando un Admin ingrese el marcador en Predicciones → Marcador.</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:5,marginBottom:12}}>
+              {Object.keys(UM).map(function(uid) {
+                var um=UM[uid]; var s=calcScore(uid);
+                return (
+                  <div key={uid} style={{background:'#0d1220',border:'1px solid '+um.c+'44',borderRadius:9,padding:'8px',textAlign:'center'}}>
+                    <div style={{fontSize:18}}>{um.i}</div>
+                    <div style={{fontSize:13,fontWeight:700,color:um.c}}>{um.l}</div>
+                    <div style={{fontSize:10,color:'#6070a0',marginTop:2}}>{s.tot?(s.w+'/'+s.tot+' · '+s.pct+'%'):'Sin resultados aún'}</div>
+                  </div>
+                );
+              })}
+            </div>
+            {UPCOMING.map(function(g) {
+              var realR=actual[g.id];
+              var realSc=scores[g.id]||{hs:'',as:''};
+              var hasRealSc=realSc.hs!==''&&realSc.as!=='';
+              var pScores={win:predWin[g.id]||{hs:'',as:''},santi:predSanti[g.id]||{hs:'',as:''},claude:predClaude[g.id]||{hs:'',as:''}};
+              var pResults2={win:predResults.win[g.id],santi:predResults.santi[g.id],claude:predResults.claude[g.id]};
+              return (
+                <div key={g.id} style={{background:'#0d1220',border:'1px solid '+(realR?'#ffffff15':'#ffffff08'),borderRadius:11,marginBottom:8,overflow:'hidden'}}>
+                  <div style={{padding:'9px 12px',background:'#111826',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <div>
+                      <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.h].n}</span>
+                      <span style={{fontSize:11,color:'#6070a0',margin:'0 6px'}}>vs</span>
+                      <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.a].n}</span>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:7}}>
+                      {hasRealSc ? (
+                        <div style={{display:'flex',alignItems:'center',gap:5}}>
+                          <span style={{fontSize:10,color:'#6070a0'}}>Real:</span>
+                          <span style={{fontSize:16,fontWeight:800,color:'#00d4aa',background:'#00d4aa18',padding:'2px 10px',borderRadius:6,border:'1px solid #00d4aa33'}}>{realSc.hs}–{realSc.as}</span>
+                          <span style={{fontSize:10,color:realR==='h'?T[g.h].c:realR==='a'?T[g.a].c:'#f0c040',fontWeight:700}}>{realR==='h'?T[g.h].n:realR==='a'?T[g.a].n:'Empate'}</span>
+                        </div>
+                      ) : (
+                        <span style={{fontSize:9,color:'#6070a0',background:'#151d2e',padding:'2px 7px',borderRadius:4}}>{g.date} · {g.time}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:1}}>
+                    {Object.keys(UM).map(function(uid) {
+                      var um=UM[uid]; var ps=pScores[uid]; var pr=pResults2[uid];
+                      var hasPs=ps.hs!==''&&ps.as!=='';
+                      var ok=realR&&pr&&realR===pr; var fail=realR&&pr&&realR!==pr;
+                      return (
+                        <div key={uid} style={{padding:'10px 8px',textAlign:'center',background:ok?'#00d4aa0a':fail?'#ff44550a':'transparent',borderTop:'1px solid '+(ok?'#00d4aa22':fail?'#ff445522':'#ffffff08')}}>
+                          <div style={{fontSize:10,color:um.c,fontWeight:700,marginBottom:5}}>{um.i} {um.l}</div>
+                          {hasPs ? (
+                            <div>
+                              <div style={{fontSize:22,fontWeight:800,color:'#fff',lineHeight:1}}>{ps.hs} – {ps.as}</div>
+                              {pr&&<div style={{fontSize:10,marginTop:4,padding:'2px 8px',borderRadius:5,display:'inline-block',background:pr==='h'?T[g.h].c+'22':pr==='a'?T[g.a].c+'22':'#f0c04022',color:pr==='h'?T[g.h].c:pr==='a'?T[g.a].c:'#f0c040',fontWeight:700}}>{pr==='h'?T[g.h].n.split(' ')[0]:pr==='a'?T[g.a].n.split(' ')[0]:'Empate'}</div>}
+                              {realR&&<div style={{fontSize:16,marginTop:4}}>{ok?'✅':'❌'}</div>}
+                            </div>
+                          ) : (
+                            <div style={{fontSize:11,color:'#404a60',marginTop:4}}>Sin pred.</div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+      </main>
+      <footer style={{textAlign:'center',padding:'9px',borderTop:'1px solid #ffffff08',fontSize:10,color:'#405070',letterSpacing:1}}>EPL TRACKER CR · github.com/winreds · 2026</footer>
+    </div>
   );
 }
 
-/* ═══════════════════ ROOT ═══════════════════ */
-function Root(){
-  const[user,setUser]=useState(()=>getSession());
-  return user?<MainApp user={user} onLogout={()=>setUser(null)}/>:<Login onLogin={u=>setUser(u)}/>;
+/* ══════════════ ROOT ══════════════ */
+function Root() {
+  var [user, setUser] = useState(function(){ return getSession(); });
+  return user ? React.createElement(MainApp, {user:user, onLogout:function(){ setUser(null); }}) : React.createElement(Login, {onLogin:function(u){ setUser(u); }});
 }
-ReactDOM.createRoot(document.getElementById('root')).render(<Root/>);
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Root, null));
 </script>
 </body>
 </html>
