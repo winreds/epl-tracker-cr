@@ -212,38 +212,34 @@ const SCORERS_DATA={
     ],
   },
 };
+/* ═══════════════════ PREDICTED SCORES PER USER ═══════════════════ */
+/* Each user inputs their PREDICTED marcador. Result (h/a/d) derived automatically. */
+const PRED_SCORES_KEY=uid=>`eplcr_pred_scores_${uid}`;
 
-/* Claude's pre-filled analysis picks for jornada 29-30 (14-16 Mar 2026)
-   Based on: probabilities, H2H, form, context (Liverpool lost to Wolves, Chelsea beat Villa 4-1) */
-const CLAUDE_DEFAULT_PICKS={
-  g1:'a', g2:'d', g3:'h', g4:'h', g5:'a',
-  g6:'h', g7:'h', g8:'h', g9:'h', g10:'h',
+/* My (Claude) predicted scorelines for jornada 29-30, 14-16 Mar 2026 */
+const CLAUDE_PRED_SCORES={
+  g1: {hs:'0',as:'2'}, /* BUR 0-2 BOU — Bournemouth strong away */
+  g2: {hs:'1',as:'1'}, /* SUN 1-1 BRI — tight, expecting a draw */
+  g3: {hs:'2',as:'0'}, /* ARS 2-0 EVE — Arsenal dominate at home */
+  g4: {hs:'2',as:'1'}, /* CFC 2-1 NEW — Chelsea bounce-back win */
+  g5: {hs:'0',as:'2'}, /* WHU 0-2 MCI — City too strong */
+  g6: {hs:'2',as:'1'}, /* CRY 2-1 LEE — Palace on good form */
+  g7: {hs:'2',as:'0'}, /* MUN 2-0 AVL — United need points at OT */
+  g8: {hs:'2',as:'1'}, /* NFO 2-1 FUL — Forest home advantage */
+  g9: {hs:'3',as:'0'}, /* LFC 3-0 TOT — Liverpool obliterate Spurs */
+  g10:{hs:'2',as:'0'}, /* BRE 2-0 WOL — Brentford vs bottom side */
 };
 
-/* Per-user localStorage — NEVER shared between users */
-const PICKS_KEY=uid=>`eplcr_picks_${uid}`;
-const loadPicks=uid=>{
+const loadPredScores=uid=>{
   try{
-    /* Try new per-user key first */
-    const raw=localStorage.getItem(PICKS_KEY(uid));
+    const raw=localStorage.getItem(PRED_SCORES_KEY(uid));
     if(raw){const p=JSON.parse(raw);if(p&&Object.keys(p).length>0)return p;}
-    /* Migrate from old shared eplcr_preds key if it exists */
-    const oldRaw=localStorage.getItem('eplcr_preds');
-    if(oldRaw){
-      const old=JSON.parse(oldRaw);
-      if(old&&old[uid]&&Object.keys(old[uid]).length>0){
-        const migrated=old[uid];
-        localStorage.setItem(PICKS_KEY(uid),JSON.stringify(migrated));
-        return migrated;
-      }
-    }
   }catch(e){}
-  return uid==='claude'?{...CLAUDE_DEFAULT_PICKS}:{};
+  return uid==='claude'?{...CLAUDE_PRED_SCORES}:{};
 };
-const savePicks=(uid,picks)=>{
-  try{localStorage.setItem(PICKS_KEY(uid),JSON.stringify(picks));}catch(e){}
+const savePredScores=(uid,sc)=>{
+  try{localStorage.setItem(PRED_SCORES_KEY(uid),JSON.stringify(sc));}catch(e){}
 };
-const BETTING=[
   {id:'g1',h:'BUR',a:'BOU',
    books:[
      {name:'Bet365',  logo:'B3',color:'#00A651',odds:{h:4.50,d:3.60,a:1.75}},
@@ -484,96 +480,33 @@ function TeamDetail({code,onClose}){
   );
 }
 
-/* ═══════════════════ PICKS PANEL (reusable for Win/Santi) ═══════════════════ */
-function PicksPanel({who,user,picks,setMyPicks,actual,scores}){
-  /* picks = only THIS user's picks object e.g. {g1:'h', g2:'a', ...} */
-  const m=UM[who];
-  const isMe=who===user.id;
-  const canPick=isMe&&who!=='claude';
-  const cor=Object.keys(actual).filter(id=>picks[id]&&picks[id]===actual[id]).length;
-  const done=Object.keys(picks).length;
-
-  return(<div>
-    {/* Header stats */}
-    <div style={{background:'linear-gradient(135deg,#0a1628,#071022)',border:`1px solid ${isMe?m.c+'44':'#ffffff15'}`,borderRadius:10,padding:'11px 13px',marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-      <div>
-        <div style={{fontSize:9,color:'#6070a0',letterSpacing:2}}>{m.i} {m.l.toUpperCase()}
-          {isMe&&<span style={{marginLeft:6,color:m.c,background:m.c+'22',padding:'1px 6px',borderRadius:4,fontSize:9}}>TÚ</span>}
-        </div>
-        <div style={{fontSize:19,fontWeight:800,color:m.c,fontFamily:"'Barlow Condensed',sans-serif",marginTop:2}}>{done} / {UPCOMING.length} elegidas</div>
-      </div>
-      <div style={{textAlign:'right'}}>
-        <div style={{fontSize:9,color:'#6070a0'}}>Acertadas</div>
-        <div style={{fontSize:24,fontWeight:800,color:'#f0c040',fontFamily:"'Barlow Condensed',sans-serif"}}>{cor}</div>
-      </div>
-    </div>
-    {!isMe&&<div style={{fontSize:12,color:'#6070a0',background:'#0d1220',border:'1px solid #ffffff0a',borderRadius:8,padding:'7px 11px',marginBottom:9,textAlign:'center'}}>
-      👁️ Viendo picks de <strong style={{color:m.c}}>{m.l}</strong> — solo lectura
-    </div>}
-    {UPCOMING.map(g=>{
-      const pick=picks[g.id];const res=actual[g.id];
-      const ok=res&&pick&&res===pick;const fail=res&&pick&&res!==pick;
-      const sc=scores[g.id]||{hs:'',as:''};
-      const hasScore=sc.hs!==''&&sc.as!=='';
-      return(
-      <div key={g.id} style={{background:'#0d1220',border:`1px solid ${ok?'#00d4aa44':fail?'#ff445533':'#ffffff0a'}`,borderRadius:10,marginBottom:5,padding:'9px 11px',transition:'border-color .3s'}}>
-        {/* Match header */}
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-          <div style={{flex:1}}>
-            <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.h].n}</span>
-            <span style={{fontSize:11,color:'#6070a0',margin:'0 5px'}}>vs</span>
-            <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.a].n}</span>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:5}}>
-            {/* Show real score if available */}
-            {hasScore&&<span style={{fontSize:12,fontWeight:800,color:'#dde8ff',background:'#151d2e',padding:'2px 9px',borderRadius:6,border:'1px solid #ffffff18',fontFamily:"'Barlow Condensed',sans-serif"}}>{sc.hs} – {sc.as}</span>}
-            <span style={{fontSize:10,color:'#6070a0'}}>{g.date}</span>
-            {res&&<span style={{fontSize:15,animation:ok?'pulse .5s ease':'none'}}>{ok?'✅':'❌'}</span>}
-          </div>
-        </div>
-        {/* Pick buttons */}
-        <div style={{display:'flex',gap:4}}>
-          {[{v:'h',l:T[g.h].n.split(' ')[0],c:T[g.h].c},{v:'d',l:'Empate',c:'#f0c040'},{v:'a',l:T[g.a].n.split(' ')[0],c:T[g.a].c}].map(btn=>(
-            <button key={btn.v} className="pb" onClick={()=>canPick&&setMyPicks(p=>({...p,[g.id]:btn.v}))}
-              style={{flex:1,background:pick===btn.v?btn.c+'33':'#151d2e',color:pick===btn.v?'#fff':'#6070a0',border:`1px solid ${pick===btn.v?btn.c+'88':'#ffffff15'}`,fontWeight:pick===btn.v?700:500,fontSize:11,padding:'6px 3px',cursor:canPick?'pointer':'default'}}>{btn.l}</button>
-          ))}
-        </div>
-        {/* Result display — auto-reflects from scores */}
-        {res&&<div style={{marginTop:6,padding:'5px 9px',borderRadius:6,background:ok?'#00d4aa12':'#ff445512',border:`1px solid ${ok?'#00d4aa33':'#ff445533'}`,fontSize:11,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <span style={{color:'#6070a0'}}>Resultado: <strong style={{color:'#dde8ff'}}>{res==='h'?T[g.h].n:res==='a'?T[g.a].n:'Empate'}</strong></span>
-          <span style={{color:ok?'#00d4aa':'#ff4455',fontWeight:700}}>{m.l}: {pL(pick)||'Sin pick'} {ok?'✓':'✗'}</span>
-        </div>}
-      </div>
-      );
-    })}
-  </div>);
-}
-
 /* ═══════════════════ MAIN APP ═══════════════════ */
 function MainApp({user,onLogout}){
   const[tab,setTab]=useState('inicio');
   const[pTab,setPTab]=useState(()=>(['win','santi'].includes(user.id)?user.id:'win'));
   const[histY,setHistY]=useState('2025-26');
   const[oh2h,setOh2h]=useState(null);
-  /* ── Per-user picks — each stored independently so Win/Santi/Claude NEVER share picks ── */
-  const[picksWin,  setPicksWin  ]=useState(()=>loadPicks('win'));
-  const[picksSanti,setPicksSanti]=useState(()=>loadPicks('santi'));
-  const[picksClaude,setPicksClaude]=useState(()=>loadPicks('claude'));
+  /* ── Predicted SCORES — each user inputs their predicted marcador ── */
+  const[predWin,  setPredWin  ]=useState(()=>loadPredScores('win'));
+  const[predSanti,setPredSanti]=useState(()=>loadPredScores('santi'));
+  const[predClaude,setPredClaude]=useState(()=>loadPredScores('claude'));
   const[scores,setScores]=useState(()=>{try{return JSON.parse(localStorage.getItem('eplcr_scores')||'{}')}catch(e){return{}}});
-  const[cLoad,setCLoad]=useState(false);const[cMsg,setCMsg]=useState('');
   const[adminOpen,setAdminOpen]=useState(false);const[menuOpen,setMenuOpen]=useState(false);
   const[teamDetail,setTeamDetail]=useState(null);
   const[scorerY,setScorerY]=useState('2025-26');
   const[scorerView,setScorerView]=useState('scorers');
   const[bettingOpen,setBettingOpen]=useState(null);
 
-  useEffect(()=>{savePicks('win',picksWin);},[picksWin]);
-  useEffect(()=>{savePicks('santi',picksSanti);},[picksSanti]);
-  useEffect(()=>{savePicks('claude',picksClaude);},[picksClaude]);
+  useEffect(()=>{savePredScores('win',predWin);},[predWin]);
+  useEffect(()=>{savePredScores('santi',predSanti);},[predSanti]);
+  useEffect(()=>{savePredScores('claude',predClaude);},[predClaude]);
   useEffect(()=>{localStorage.setItem('eplcr_scores',JSON.stringify(scores));},[scores]);
 
-  /* Build unified preds object for display & scoring only */
-  const preds=useMemo(()=>({win:picksWin,santi:picksSanti,claude:picksClaude}),[picksWin,picksSanti,picksClaude]);
+  /* Derive predicted RESULT from predicted score */
+  const predResults=useMemo(()=>{
+    const mapUser=psMap=>Object.fromEntries(Object.entries(psMap).map(([id,sc])=>[id,scoreToResult(sc.hs,sc.as)]).filter(([,r])=>r!==null));
+    return{win:mapUser(predWin),santi:mapUser(predSanti),claude:mapUser(predClaude)};
+  },[predWin,predSanti,predClaude]);
 
   /* Derive actual results automatically from scores */
   const actual=useMemo(()=>{
@@ -587,37 +520,28 @@ function MainApp({user,onLogout}){
     setScores(p=>({...p,[id]:{...(p[id]||{hs:'',as:''}),[field]:clean}}));
   };
 
-  const getClaudePicks=async()=>{
-    const pending=UPCOMING.filter(m=>!gameStarted(m.crStart));
-    if(!pending.length){setCMsg('🔒 Todos los partidos ya comenzaron.');return;}
-    setCLoad(true);setCMsg('');
-    try{
-      const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,
-          messages:[{role:'user',content:`Experto Premier League. Predice SOLO los partidos aún no iniciados (14-16 Mar 2026 CR).
-Arsenal lidera 67pts (30PJ). Liverpool perdió 2-1 Wolves. Chelsea goleó Villa 4-1. Crystal Palace venció Tottenham 3-1.
-${pending.map(m=>`${m.id}: ${T[m.h].n}(local ${m.prob.h}%) vs ${T[m.a].n}(visita ${m.prob.a}%) empate(${m.prob.d}%)`).join('\n')}
-SOLO JSON sin texto ni markdown: {"g1":"h","g2":"d",...} h=local a=visita d=empate`}]})});
-      const d=await r.json();
-      const raw=(d.content||[]).map(c=>c.text||'').join('');
-      const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());
-      /* setPicksClaude directly — never touches Win/Santi picks */
-      setPicksClaude(prev=>({...prev,...parsed}));
-      setCMsg(`✅ ${Object.keys(parsed).length} predicciones listas`);
-    }catch(e){setCMsg('❌ '+e.message);}
-    setCLoad(false);
+  const calcScore=who=>{
+    const pr=predResults[who]||{};
+    let w=0,tot=0;
+    Object.keys(actual).forEach(id=>{if(pr[id]){tot++;if(pr[id]===actual[id])w++;}});
+    return{w,tot,pct:tot?Math.round(w/tot*100):0};
   };
 
-  const calcScore=who=>{const p=preds[who]||{};let w=0,tot=0;Object.keys(actual).forEach(id=>{if(p[id]){tot++;if(p[id]===actual[id])w++;}});return{w,tot,pct:tot?Math.round(w/tot*100):0};};
+  const setPredScore=(who,id,field,val)=>{
+    const clean=val.replace(/[^0-9]/g,'').slice(0,2);
+    const setter=who==='win'?setPredWin:who==='santi'?setPredSanti:setPredClaude;
+    setter(p=>({...p,[id]:{...(p[id]||{hs:'',as:''}),[field]:clean}}));
+  };
 
   const NAV=[
     {id:'inicio',  icon:'🏠',l:'Inicio'},
     {id:'results', icon:'📅',l:'Historial'},
     {id:'fixtures',icon:'🔮',l:'Próximos'},
     {id:'table',   icon:'📊',l:'Tabla'},
-    {id:'scorers', icon:'⚽',l:'Goleadores'},
+    {id:'scoring', icon:'⚽',l:'Goleadores'},
     {id:'betting', icon:'💰',l:'Apuestas'},
-    {id:'pred',    icon:'🎯',l:'Predictor'},
+    {id:'pred',    icon:'🎯',l:'Predicciones'},
+    {id:'comparar',icon:'📋',l:'Comparar'},
   ];
 
   return(
@@ -810,7 +734,7 @@ SOLO JSON sin texto ni markdown: {"g1":"h","g2":"d",...} h=local a=visita d=empa
       </div>}
 
       {/* ══ GOLEADORES ══ */}
-      {tab==='scorers'&&<div className="fade">
+      {tab==='scoring'&&<div className="fade">
         {/* Season selector */}
         <div style={{display:'flex',gap:5,marginBottom:10,flexWrap:'wrap'}}>
           {Object.keys(SCORERS_DATA).map(y=>(<button key={y} onClick={()=>setScorerY(y)} style={{padding:'5px 13px',border:`1px solid ${scorerY===y?'transparent':'#ffffff15'}`,cursor:'pointer',borderRadius:8,background:scorerY===y?'#00d4aa':'#0d1220',color:scorerY===y?'#070b16':'#6070a0',fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:13,transition:'all .2s'}}>{y}</button>))}
@@ -943,8 +867,9 @@ SOLO JSON sin texto ni markdown: {"g1":"h","g2":"d",...} h=local a=visita d=empa
           </div>);})}
       </div>}
 
-      {/* ══ PREDICTOR ══ */}
+      {/* ══ PREDICCIONES ══ */}
       {tab==='pred'&&<div className="fade">
+        {/* Sub-tabs */}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:3,background:'#0d1220',padding:4,borderRadius:10,border:'1px solid #ffffff0a',marginBottom:10}}>
           {[{id:'win',i:'⚽',l:'Win'},{id:'santi',i:'🎯',l:'Santi'},{id:'claude',i:'🤖',l:'Claude'},{id:'board',i:'🏅',l:'Marcador'}].map(pt=>(
             <button key={pt.id} onClick={()=>setPTab(pt.id)} style={{padding:'7px 4px',border:'none',cursor:'pointer',borderRadius:7,background:pTab===pt.id?'#00d4aa':'transparent',color:pTab===pt.id?'#070b16':'#6070a0',fontFamily:"'Rajdhani',sans-serif",fontWeight:700,fontSize:11,transition:'all .2s',display:'flex',flexDirection:'column',alignItems:'center',gap:2,outline:pTab!==pt.id&&pt.id===user.id?`1px solid ${user.color}44`:'none'}}>
@@ -953,81 +878,125 @@ SOLO JSON sin texto ni markdown: {"g1":"h","g2":"d",...} h=local a=visita d=empa
             </button>))}
         </div>
 
-        {/* WIN / SANTI — independent picks, NEVER shared */}
-        {(pTab==='win'||pTab==='santi')&&(
-          <PicksPanel
-            key={pTab}
-            who={pTab}
-            user={user}
-            picks={pTab==='win'?picksWin:picksSanti}
-            setMyPicks={pTab==='win'?setPicksWin:setPicksSanti}
-            actual={actual}
-            scores={scores}
-          />
-        )}
-
-        {/* CLAUDE */}
-        {pTab==='claude'&&(<div>
-          <div style={{background:'linear-gradient(135deg,#071828,#040e1a)',border:'1px solid #00d4aa33',borderRadius:10,padding:'12px',marginBottom:10}}>
-            <div style={{fontSize:9,color:'#6070a0',letterSpacing:2,marginBottom:5}}>🤖 ANÁLISIS DE CLAUDE IA</div>
-            <p style={{fontSize:13,color:'#8090b0',lineHeight:1.6,marginBottom:8}}>Claude predice solo partidos <strong style={{color:'#00d4aa'}}>antes de que comiencen</strong> en hora CR. Una vez iniciado el partido, ese pick queda bloqueado.</p>
-            <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:10}}>
-              {UPCOMING.map(g=>{const started=gameStarted(g.crStart);const pick=picksClaude[g.id];return(
-                <div key={g.id} style={{fontSize:10,padding:'3px 8px',borderRadius:5,background:started?'#ff445518':pick?'#00d4aa18':'#151d2e',color:started?'#ff4455':pick?'#00d4aa':'#6070a0',border:`1px solid ${started?'#ff445544':pick?'#00d4aa44':'#ffffff10'}`}}>
-                  {started?'🔒':pick?'✓':'○'} {T[g.h].n.split(' ')[0]}-{T[g.a].n.split(' ')[0]}
-                </div>);})}
+        {/* WIN / SANTI / CLAUDE — each enters their own predicted marcador */}
+        {(pTab==='win'||pTab==='santi'||pTab==='claude')&&(()=>{
+          const who=pTab;
+          const um=UM[who];
+          const isMe=who===user.id;
+          const isClaudeTab=who==='claude';
+          const canEdit=isMe&&!isClaudeTab; /* only the logged-in user can edit their own */
+          const myPredScores=who==='win'?predWin:who==='santi'?predSanti:predClaude;
+          const myPredResults=predResults[who]||{};
+          const done=Object.keys(myPredScores).filter(id=>{const s=myPredScores[id];return s&&s.hs!==''&&s.as!=='';}).length;
+          const cor=Object.keys(actual).filter(id=>myPredResults[id]&&myPredResults[id]===actual[id]).length;
+          const tot=Object.keys(actual).filter(id=>myPredResults[id]).length;
+          return(<div>
+            {/* Header */}
+            <div style={{background:'linear-gradient(135deg,#0a1628,#071022)',border:`1px solid ${isMe||isClaudeTab?um.c+'44':'#ffffff15'}`,borderRadius:10,padding:'11px 13px',marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div>
+                <div style={{fontSize:9,color:'#6070a0',letterSpacing:2,display:'flex',alignItems:'center',gap:6}}>
+                  {um.i} PREDICCIONES DE {um.l.toUpperCase()}
+                  {isMe&&!isClaudeTab&&<span style={{color:um.c,background:um.c+'22',padding:'1px 6px',borderRadius:4,fontSize:9}}>TÚ</span>}
+                  {isClaudeTab&&<span style={{color:'#00d4aa',background:'#00d4aa18',padding:'1px 6px',borderRadius:4,fontSize:9}}>IA</span>}
+                </div>
+                <div style={{fontSize:19,fontWeight:800,color:um.c,fontFamily:"'Barlow Condensed',sans-serif",marginTop:2}}>{done} / {UPCOMING.length} marcadores</div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:9,color:'#6070a0'}}>Acertadas</div>
+                <div style={{fontSize:24,fontWeight:800,color:'#f0c040',fontFamily:"'Barlow Condensed',sans-serif"}}>{cor}<span style={{fontSize:13,color:'#6070a0',fontWeight:400'}}>/{tot}</span></div>
+              </div>
             </div>
-            <button onClick={getClaudePicks} disabled={cLoad} style={{width:'100%',background:cLoad?'#151d2e':'linear-gradient(135deg,#00d4aa,#0090aa)',color:cLoad?'#6070a0':'#070b16',border:'none',borderRadius:9,padding:'10px',cursor:cLoad?'default':'pointer',fontFamily:"'Barlow Condensed',sans-serif",fontWeight:700,fontSize:15,letterSpacing:1,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-              {cLoad?<><span style={{animation:'shimmer 1s infinite'}}>⏳</span>ANALIZANDO...</>:<><span>🤖</span>OBTENER PREDICCIONES DE CLAUDE</>}
-            </button>
-            {cMsg&&<div style={{marginTop:7,fontSize:12,textAlign:'center',color:cMsg.includes('✅')?'#00d4aa':cMsg.includes('🔒')?'#f0c040':'#ff4455'}}>{cMsg}</div>}
-          </div>
-          {/* Claude picks display — also uses actual for auto-result */}
-          {UPCOMING.map(g=>{
-            const pick=picksClaude[g.id];const res=actual[g.id];
-            const ok=res&&pick&&res===pick;const fail=res&&pick&&res!==pick;
-            const maxP=Math.max(g.prob.h,g.prob.a,g.prob.d);const started=gameStarted(g.crStart);
-            const sc=scores[g.id]||{hs:'',as:''};const hasScore=sc.hs!==''&&sc.as!=='';
-            return(
-            <div key={g.id} style={{background:'#0d1220',border:`1px solid ${ok?'#00d4aa44':fail?'#ff445533':started&&!pick?'#ff445522':'#ffffff0a'}`,borderRadius:10,marginBottom:5,padding:'9px 11px',transition:'border-color .3s'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
-                <span style={{fontSize:13}}><strong style={{color:'#fff'}}>{T[g.h].n}</strong><span style={{color:'#6070a0',margin:'0 5px'}}>vs</span><strong style={{color:'#fff'}}>{T[g.a].n}</strong></span>
-                <div style={{display:'flex',alignItems:'center',gap:5}}>
-                  {hasScore&&<span style={{fontSize:12,fontWeight:800,color:'#dde8ff',background:'#151d2e',padding:'2px 9px',borderRadius:6,border:'1px solid #ffffff18',fontFamily:"'Barlow Condensed',sans-serif"}}>{sc.hs} – {sc.as}</span>}
-                  {started&&!pick&&<span style={{fontSize:9,color:'#ff4455',background:'#ff445518',padding:'1px 6px',borderRadius:4}}>🔒</span>}
-                  {res&&<span style={{fontSize:14}}>{ok?'✅':'❌'}</span>}
+            {isClaudeTab&&<div style={{fontSize:12,color:'#8090b0',background:'#071828',border:'1px solid #00d4aa22',borderRadius:8,padding:'8px 12px',marginBottom:10,lineHeight:1.5}}>
+              🤖 Mis predicciones están pre-cargadas basadas en probabilidades estadísticas, H2H y forma reciente. Solo puedo predecir partidos <strong style={{color:'#00d4aa'}}>antes de que empiecen</strong>.
+            </div>}
+            {!isMe&&!isClaudeTab&&<div style={{fontSize:12,color:'#6070a0',background:'#0d1220',border:'1px solid #ffffff0a',borderRadius:8,padding:'7px 11px',marginBottom:9,textAlign:'center'}}>
+              👁️ Viendo predicciones de <strong style={{color:um.c}}>{um.l}</strong> — solo lectura
+            </div>}
+            {UPCOMING.map(g=>{
+              const sc=myPredScores[g.id]||{hs:'',as:''};
+              const predR=scoreToResult(sc.hs,sc.as);
+              const realR=actual[g.id];
+              const realSc=scores[g.id]||{hs:'',as:''};
+              const hasRealSc=realSc.hs!==''&&realSc.as!=='';
+              const ok=realR&&predR&&realR===predR;
+              const fail=realR&&predR&&realR!==predR;
+              const started=gameStarted(g.crStart);
+              const locked=isClaudeTab&&started&&(!sc.hs&&!sc.as);
+              const editable=canEdit&&!started||canEdit&&started; /* win/santi can edit any time; only Claude is time-locked */
+              const claudeEditable=false; /* Claude picks are always read-only */
+              const cellEdit=isClaudeTab?false:canEdit;
+              return(
+              <div key={g.id} style={{background:'#0d1220',border:`1px solid ${ok?'#00d4aa44':fail?'#ff445533':'#ffffff0a'}`,borderRadius:10,marginBottom:5,padding:'10px 12px',transition:'border-color .3s'}}>
+                {/* Match header */}
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                  <div>
+                    <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.h].n}</span>
+                    <span style={{fontSize:11,color:'#6070a0',margin:'0 6px'}}>vs</span>
+                    <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.a].n}</span>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:5}}>
+                    {hasRealSc&&<span style={{fontSize:12,fontWeight:800,color:'#dde8ff',background:'#151d2e',padding:'2px 8px',borderRadius:5,border:'1px solid #ffffff18',fontFamily:"'Barlow Condensed',sans-serif"}}>{realSc.hs}–{realSc.as}</span>}
+                    <span style={{fontSize:9,color:'#6070a0'}}>{g.date}</span>
+                    {realR&&predR&&<span style={{fontSize:15}}>{ok?'✅':'❌'}</span>}
+                  </div>
                 </div>
-              </div>
-              <div style={{display:'flex',gap:7,alignItems:'center'}}>
-                <div style={{padding:'5px 12px',borderRadius:8,fontSize:12,fontWeight:700,background:pick?({h:T[g.h].c,a:T[g.a].c,d:'#f0c040'}[pick]+'33'):'#151d2e',border:`1px solid ${pick?({h:T[g.h].c,a:T[g.a].c,d:'#f0c040'}[pick]+'55'):'#ffffff18'}`,color:pick?'#fff':'#6070a0'}}>
-                  {pick?{h:`🏠 ${T[g.h].n}`,a:`✈️ ${T[g.a].n}`,d:'🤝 Empate'}[pick]:started?'— Bloqueado —':'— Sin analizar —'}
+                {/* Score prediction inputs */}
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <span style={{fontSize:12,color:'#8090b0',flex:1,textAlign:'right'}}>{T[g.h].n}</span>
+                  <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
+                    <input type="number" min="0" max="20" value={sc.hs}
+                      onChange={e=>cellEdit&&setPredScore(who,g.id,'hs',e.target.value)}
+                      readOnly={!cellEdit}
+                      style={{width:46,padding:'6px',textAlign:'center',
+                        background:cellEdit?'#1a2540':'#111825',
+                        border:`1px solid ${predR&&sc.hs!==''?um.c+'55':'#ffffff18'}`,
+                        borderRadius:8,color:'#fff',fontSize:20,fontWeight:800,outline:'none',
+                        fontFamily:"'Barlow Condensed',sans-serif",cursor:cellEdit?'text':'default'}}/>
+                    <span style={{color:'#404a60',fontWeight:700,fontSize:20,fontFamily:"'Barlow Condensed',sans-serif"}}>—</span>
+                    <input type="number" min="0" max="20" value={sc.as}
+                      onChange={e=>cellEdit&&setPredScore(who,g.id,'as',e.target.value)}
+                      readOnly={!cellEdit}
+                      style={{width:46,padding:'6px',textAlign:'center',
+                        background:cellEdit?'#1a2540':'#111825',
+                        border:`1px solid ${predR&&sc.as!==''?um.c+'55':'#ffffff18'}`,
+                        borderRadius:8,color:'#fff',fontSize:20,fontWeight:800,outline:'none',
+                        fontFamily:"'Barlow Condensed',sans-serif",cursor:cellEdit?'text':'default'}}/>
+                  </div>
+                  <span style={{fontSize:12,color:'#8090b0',flex:1,textAlign:'left'}}>{T[g.a].n}</span>
                 </div>
-                <div style={{fontSize:11,color:'#6070a0'}}>Estadística: {maxP}%</div>
+                {/* Auto derived result */}
+                {predR&&(
+                  <div style={{marginTop:7,display:'flex',justifyContent:'center',alignItems:'center',gap:8}}>
+                    <div style={{padding:'3px 14px',borderRadius:6,fontSize:11,fontWeight:700,letterSpacing:.5,
+                      background:predR==='h'?T[g.h].c+'33':predR==='a'?T[g.a].c+'33':'#f0c04033',
+                      color:predR==='h'?T[g.h].c:predR==='a'?T[g.a].c:'#f0c040',
+                      border:`1px solid ${predR==='h'?T[g.h].c+'55':predR==='a'?T[g.a].c+'55':'#f0c04055'}`}}>
+                      {predR==='h'?`Gana ${T[g.h].n}`:predR==='a'?`Gana ${T[g.a].n}`:'Empate'}
+                    </div>
+                    {realR&&<span style={{fontSize:11,color:ok?'#00d4aa':'#ff4455',fontWeight:700}}>{ok?'✓ Acertó':'✗ Falló'}</span>}
+                  </div>
+                )}
+                {cellEdit&&predR&&<button className="pb" onClick={()=>{const setter=who==='win'?setPredWin:setPredSanti;setter(p=>{const n={...p};delete n[g.id];return n;});}} style={{display:'block',margin:'6px auto 0',background:'#ff445518',color:'#ff4455',border:'1px solid #ff445540',padding:'3px 10px',fontSize:10}}>✕ Borrar</button>}
               </div>
-              {res&&<div style={{marginTop:6,padding:'5px 9px',borderRadius:6,background:ok?'#00d4aa12':'#ff445512',border:`1px solid ${ok?'#00d4aa33':'#ff445533'}`,fontSize:11,display:'flex',justifyContent:'space-between'}}>
-                <span style={{color:'#6070a0'}}>Resultado: <strong style={{color:'#dde8ff'}}>{res==='h'?T[g.h].n:res==='a'?T[g.a].n:'Empate'}</strong></span>
-                <span style={{color:ok?'#00d4aa':'#ff4455',fontWeight:700}}>Claude: {pL(pick)||'N/A'} {ok?'✓':'✗'}</span>
-              </div>}
-            </div>);})}
-        </div>)}
+              );
+            })}
+          </div>);
+        })()}
 
-        {/* MARCADOR */}
+        {/* MARCADOR — real results (admin only) */}
         {pTab==='board'&&(()=>{
           const sc2={win:calcScore('win'),santi:calcScore('santi'),claude:calcScore('claude')};
           const ranked=Object.entries(sc2).sort((a,b)=>b[1].pct-a[1].pct);
           return(<div>
-            <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:6}}>INGRESAR MARCADORES REALES</div>
+            <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:6}}>MARCADORES REALES</div>
             <div style={{fontSize:11,color:'#6070a0',background:'#0d1220',border:'1px solid #ffffff0a',borderRadius:8,padding:'8px 11px',marginBottom:8}}>
-              {user.role==='admin'
-                ?'✅ Admin — ingresa el marcador exacto. El resultado se calcula automáticamente y se refleja en todos los tabs al instante.'
-                :'👁️ Solo admins pueden ingresar marcadores.'}
+              {user.role==='admin'?'✅ Admin — ingresa el marcador real. El resultado (G/E/P) se calcula solo y se refleja en todos los tabs.':'👁️ Solo admins pueden ingresar marcadores reales.'}
             </div>
             {UPCOMING.map(g=>{
               const s=scores[g.id]||{hs:'',as:''};const r=scoreToResult(s.hs,s.as);const canEdit=user.role==='admin';
-              const winPred={win:(picksWin)[g.id],santi:(picksSanti)[g.id],claude:picksClaude[g.id]};
+              const allPreds={win:predResults.win[g.id],santi:predResults.santi[g.id],claude:predResults.claude[g.id]};
               return(
               <div key={g.id} style={{background:'#0d1220',border:`1px solid ${r?'#00d4aa33':'#ffffff0a'}`,borderRadius:9,marginBottom:5,padding:'9px 11px'}}>
-                {/* Match + score inputs */}
                 <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:7}}>
                   <div style={{flex:1,textAlign:'right',fontSize:13,fontWeight:700,color:'#fff',lineHeight:1.2}}>{T[g.h].n}</div>
                   <div style={{display:'flex',alignItems:'center',gap:5,flexShrink:0}}>
@@ -1039,35 +1008,28 @@ SOLO JSON sin texto ni markdown: {"g1":"h","g2":"d",...} h=local a=visita d=empa
                   </div>
                   <div style={{flex:1,textAlign:'left',fontSize:13,fontWeight:700,color:'#fff',lineHeight:1.2}}>{T[g.a].n}</div>
                 </div>
-                {/* Auto result badge */}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:r?7:0}}>
                   <span style={{fontSize:10,color:'#6070a0'}}>{g.date} · {g.time} CR</span>
                   <div style={{display:'flex',alignItems:'center',gap:5}}>
-                    {r&&(
-                      <>
-                        <div style={{padding:'3px 12px',borderRadius:6,fontSize:11,fontWeight:700,letterSpacing:1,background:r==='h'?T[g.h].c+'33':r==='a'?T[g.a].c+'33':'#f0c04033',color:r==='h'?T[g.h].c:r==='a'?T[g.a].c:'#f0c040',border:`1px solid ${r==='h'?T[g.h].c+'55':r==='a'?T[g.a].c+'55':'#f0c04055'}`}}>
-                          {r==='h'?`Gana ${T[g.h].n}`:r==='a'?`Gana ${T[g.a].n}`:'Empate'}
-                        </div>
-                        {canEdit&&<button className="pb" onClick={()=>setScores(p=>{const n={...p};delete n[g.id];return n;})} style={{background:'#ff445518',color:'#ff4455',border:'1px solid #ff445540',padding:'4px 8px',fontSize:11}}>✕</button>}
-                      </>
-                    )}
+                    {r&&<div style={{padding:'3px 12px',borderRadius:6,fontSize:11,fontWeight:700,background:r==='h'?T[g.h].c+'33':r==='a'?T[g.a].c+'33':'#f0c04033',color:r==='h'?T[g.h].c:r==='a'?T[g.a].c:'#f0c040',border:`1px solid ${r==='h'?T[g.h].c+'55':r==='a'?T[g.a].c+'55':'#f0c04055'}`}}>
+                      {r==='h'?`Gana ${T[g.h].n}`:r==='a'?`Gana ${T[g.a].n}`:'Empate'}
+                    </div>}
+                    {canEdit&&r&&<button className="pb" onClick={()=>setScores(p=>{const n={...p};delete n[g.id];return n;})} style={{background:'#ff445518',color:'#ff4455',border:'1px solid #ff445540',padding:'4px 8px',fontSize:11}}>✕</button>}
                   </div>
                 </div>
-                {/* Mini aciertos row — shows all 3 picks vs result */}
-                {r&&(
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}}>
-                    {Object.entries(UM).map(([uid,um])=>{
-                      const pick=winPred[uid];const ok=pick&&pick===r;const fail=pick&&pick!==r;
-                      return(
-                      <div key={uid} style={{padding:'5px 6px',borderRadius:7,textAlign:'center',background:ok?'#00d4aa12':fail?'#ff445512':'#151d2e',border:`1px solid ${ok?'#00d4aa33':fail?'#ff445533':'#ffffff0a'}`}}>
-                        <div style={{fontSize:10,color:um.c,fontWeight:700}}>{um.i} {um.l}</div>
-                        <div style={{fontSize:11,color:ok?'#00d4aa':fail?'#ff4455':'#6070a0',fontWeight:700,marginTop:1}}>{pick?pL(pick):'Sin pick'} {ok?'✓':fail?'✗':''}</div>
-                      </div>);
-                    })}
-                  </div>
-                )}
+                {r&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:4}}>
+                  {Object.entries(UM).map(([uid,um])=>{
+                    const pr=allPreds[uid];const ok=pr&&pr===r;const fail=pr&&pr!==r;
+                    const ps=uid==='win'?predWin[g.id]:uid==='santi'?predSanti[g.id]:predClaude[g.id];
+                    const psStr=ps&&ps.hs!==''&&ps.as!==''?`${ps.hs}–${ps.as}`:'—';
+                    return(<div key={uid} style={{padding:'5px 6px',borderRadius:7,textAlign:'center',background:ok?'#00d4aa12':fail?'#ff445512':'#151d2e',border:`1px solid ${ok?'#00d4aa33':fail?'#ff445533':'#ffffff0a'}`}}>
+                      <div style={{fontSize:10,color:um.c,fontWeight:700}}>{um.i} {um.l}</div>
+                      <div style={{fontSize:13,fontWeight:800,color:'#dde8ff',fontFamily:"'Barlow Condensed',sans-serif"}}>{psStr}</div>
+                      <div style={{fontSize:10,color:ok?'#00d4aa':fail?'#ff4455':'#6070a0',fontWeight:700}}>{pr?pL(pr):'Sin pred.'} {ok?'✓':fail?'✗':''}</div>
+                    </div>);
+                  })}
+                </div>}
               </div>);})}
-            {/* Leaderboard */}
             <div style={{fontSize:9,color:'#f0c040',letterSpacing:2,margin:'14px 0 8px'}}>🏅 TABLA DE ACIERTOS</div>
             {ranked.map(([name,s],i)=>{const m=UM[name];return(
               <div key={name} style={{background:i===0?'linear-gradient(135deg,#1a1400,#2a1e00)':'#0d1220',border:`1px solid ${i===0?'#f0c04055':'#ffffff0a'}`,borderRadius:11,marginBottom:6,padding:'12px 15px',display:'flex',alignItems:'center',gap:11}}>
@@ -1075,20 +1037,93 @@ SOLO JSON sin texto ni markdown: {"g1":"h","g2":"d",...} h=local a=visita d=empa
                 <div style={{width:4,height:40,borderRadius:2,background:m.c,flexShrink:0}}/>
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:15,color:i===0?'#f0c040':'#dde8ff',fontFamily:"'Barlow Condensed',sans-serif",letterSpacing:.5}}>{m.i} {m.l}{name===user.id&&<span style={{marginLeft:7,fontSize:9,color:m.c,background:m.c+'22',padding:'1px 6px',borderRadius:4}}>TÚ</span>}</div>
-                  <div style={{fontSize:11,color:'#6070a0',marginTop:2}}>{s.w} acertadas de {s.tot} marcadores ingresados</div>
+                  <div style={{fontSize:11,color:'#6070a0',marginTop:2}}>{s.w} acertadas de {s.tot} con resultado real</div>
                 </div>
                 <div style={{textAlign:'center'}}>
                   <div style={{fontSize:28,fontWeight:800,lineHeight:1,color:i===0?'#f0c040':m.c,fontFamily:"'Barlow Condensed',sans-serif"}}>{s.pct}%</div>
                   <div style={{fontSize:10,color:'#6070a0'}}>precisión</div>
                 </div>
               </div>);})}
-            {Object.keys(actual).length===0&&(
-              <div style={{textAlign:'center',color:'#6070a0',fontSize:13,padding:'18px',background:'#0d1220',borderRadius:10,border:'1px solid #ffffff0a',lineHeight:1.6}}>
-                ☝️ Ingresa un marcador arriba — el resultado aparece solo en todos los tabs.</div>)}
+            {Object.keys(actual).length===0&&<div style={{textAlign:'center',color:'#6070a0',fontSize:13,padding:'18px',background:'#0d1220',borderRadius:10,border:'1px solid #ffffff0a',lineHeight:1.6}}>☝️ Ingresa un marcador real para calcular aciertos.</div>}
           </div>);
         })()}
       </div>}
 
+      {/* ══ COMPARAR ══ */}
+      {tab==='comparar'&&<div className="fade">
+        <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,marginBottom:4}}>COMPARACIÓN DE PREDICCIONES · JOR. 29-30</div>
+        <div style={{fontSize:11,color:'#6070a0',marginBottom:12,lineHeight:1.5}}>
+          Ve las predicciones de todos lado a lado. El resultado real aparece cuando un Admin ingrese el marcador en Predicciones → Marcador.
+        </div>
+        {/* Legend */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:5,marginBottom:12}}>
+          {Object.entries(UM).map(([uid,um])=>(
+            <div key={uid} style={{background:'#0d1220',border:`1px solid ${um.c}44`,borderRadius:9,padding:'8px',textAlign:'center'}}>
+              <div style={{fontSize:18}}>{um.i}</div>
+              <div style={{fontSize:13,fontWeight:700,color:um.c,fontFamily:"'Barlow Condensed',sans-serif"}}>{um.l}</div>
+              <div style={{fontSize:10,color:'#6070a0',marginTop:2}}>
+                {(()=>{const s=calcScore(uid);return s.tot?`${s.w}/${s.tot} · ${s.pct}%`:'Sin resultados aún';})()}
+              </div>
+            </div>
+          ))}
+        </div>
+        {UPCOMING.map(g=>{
+          const realR=actual[g.id];
+          const realSc=scores[g.id]||{hs:'',as:''};
+          const hasRealSc=realSc.hs!==''&&realSc.as!=='';
+          const pScores={win:predWin[g.id]||{hs:'',as:''},santi:predSanti[g.id]||{hs:'',as:''},claude:predClaude[g.id]||{hs:'',as:''}};
+          const pResults={win:predResults.win[g.id],santi:predResults.santi[g.id],claude:predResults.claude[g.id]};
+          return(
+          <div key={g.id} style={{background:'#0d1220',border:`1px solid ${realR?'#ffffff15':'#ffffff08'}`,borderRadius:11,marginBottom:8,overflow:'hidden'}}>
+            {/* Match header */}
+            <div style={{padding:'9px 12px',background:'#111826',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div>
+                <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.h].n}</span>
+                <span style={{fontSize:11,color:'#6070a0',margin:'0 6px'}}>vs</span>
+                <span style={{fontSize:13,fontWeight:700,color:'#fff'}}>{T[g.a].n}</span>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:7}}>
+                {hasRealSc&&(
+                  <div style={{display:'flex',alignItems:'center',gap:5}}>
+                    <span style={{fontSize:10,color:'#6070a0'}}>Real:</span>
+                    <span style={{fontSize:16,fontWeight:800,color:'#00d4aa',fontFamily:"'Barlow Condensed',sans-serif",background:'#00d4aa18',padding:'2px 10px',borderRadius:6,border:'1px solid #00d4aa33'}}>{realSc.hs}–{realSc.as}</span>
+                    <span style={{fontSize:10,color:realR==='h'?T[g.h].c:realR==='a'?T[g.a].c:'#f0c040',fontWeight:700}}>{realR==='h'?T[g.h].n:realR==='a'?T[g.a].n:'Empate'}</span>
+                  </div>
+                )}
+                {!hasRealSc&&<span style={{fontSize:9,color:'#6070a0',background:'#151d2e',padding:'2px 7px',borderRadius:4}}>{g.date} · {g.time}</span>}
+              </div>
+            </div>
+            {/* 3-col predictions */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:1}}>
+              {Object.entries(UM).map(([uid,um])=>{
+                const ps=pScores[uid];const pr=pResults[uid];
+                const hasPs=ps.hs!==''&&ps.as!=='';
+                const ok=realR&&pr&&realR===pr;const fail=realR&&pr&&realR!==pr;
+                return(
+                <div key={uid} style={{padding:'10px 8px',textAlign:'center',
+                  background:ok?'#00d4aa0a':fail?'#ff44550a':'transparent',
+                  borderTop:`1px solid ${ok?'#00d4aa22':fail?'#ff445522':'#ffffff08'}`}}>
+                  <div style={{fontSize:10,color:um.c,fontWeight:700,marginBottom:5}}>{um.i} {um.l}</div>
+                  {hasPs?(
+                    <>
+                      <div style={{fontSize:22,fontWeight:800,color:'#fff',fontFamily:"'Barlow Condensed',sans-serif",lineHeight:1}}>{ps.hs} – {ps.as}</div>
+                      {pr&&<div style={{fontSize:10,marginTop:4,padding:'2px 8px',borderRadius:5,display:'inline-block',
+                        background:pr==='h'?T[g.h].c+'22':pr==='a'?T[g.a].c+'22':'#f0c04022',
+                        color:pr==='h'?T[g.h].c:pr==='a'?T[g.a].c:'#f0c040',fontWeight:700}}>
+                        {pr==='h'?T[g.h].n.split(' ')[0]:pr==='a'?T[g.a].n.split(' ')[0]:'Empate'}
+                      </div>}
+                      {realR&&<div style={{fontSize:16,marginTop:4}}>{ok?'✅':'❌'}</div>}
+                    </>
+                  ):(
+                    <div style={{fontSize:11,color:'#404a60',marginTop:4}}>Sin pred.</div>
+                  )}
+                </div>);
+              })}
+            </div>
+          </div>
+          );
+        })}
+      </div>}
     </main>
     <footer style={{textAlign:'center',padding:'9px',borderTop:'1px solid #ffffff08',fontSize:10,color:'#405070',letterSpacing:1}}>EPL TRACKER CR · github.com/winreds · 2026</footer>
   </div>
