@@ -171,7 +171,97 @@ const BETTING = [
   {id:'g10',h:'BRE',a:'WOL',books:[{name:'Bet365',logo:'B3',color:'#00A651',odds:{h:1.62,d:3.75,a:5.50}},{name:'1xBet',logo:'1X',color:'#F5A623',odds:{h:1.60,d:3.80,a:5.60}},{name:'Betcris',logo:'BC',color:'#E8001A',odds:{h:1.65,d:3.70,a:5.40}}]},
 ];
 
-/* ── HELPERS ── */
+/* ══════════════════════════════════════════
+   🔑 API KEY — football-data.org (gratuita)
+   Reemplaza TU_API_KEY_AQUI con tu clave
+   Registro gratis: football-data.org/client/register
+══════════════════════════════════════════ */
+var FOOTBALL_API_KEY = '1f2a8516a51f405ab6eb6115bd41a75f';
+
+/* Mapeo de nombres de la API → códigos internos de la app */
+var NAME_TO_CODE = {
+  'Arsenal FC':'ARS', 'Manchester City FC':'MCI', 'Manchester United FC':'MUN',
+  'Liverpool FC':'LFC', 'Chelsea FC':'CFC', 'Tottenham Hotspur FC':'TOT',
+  'Aston Villa FC':'AVL', 'Newcastle United FC':'NEW', 'Brighton & Hove Albion FC':'BRI',
+  'West Ham United FC':'WHU', 'Everton FC':'EVE', 'AFC Bournemouth':'BOU',
+  'Fulham FC':'FUL', 'Brentford FC':'BRE', 'Nottingham Forest FC':'NFO',
+  'Crystal Palace FC':'CRY', 'Sunderland AFC':'SUN', 'Leeds United FC':'LEE',
+  'Wolverhampton Wanderers FC':'WOL', 'Burnley FC':'BUR',
+};
+
+function nameToCode(n) {
+  if (NAME_TO_CODE[n]) return NAME_TO_CODE[n];
+  /* fallback: busca coincidencia parcial */
+  var keys = Object.keys(NAME_TO_CODE);
+  for (var i=0; i<keys.length; i++) {
+    if (n.includes(keys[i].split(' ')[0])) return NAME_TO_CODE[keys[i]];
+  }
+  return null;
+}
+
+function formatMatchDay(dateStr) {
+  var d = new Date(dateStr);
+  var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return d.getDate() + ' ' + months[d.getMonth()];
+}
+
+/* Función principal de fetch — llama a football-data.org */
+async function fetchEPLData() {
+  var base = 'https://api.football-data.org/v4';
+  var headers = { 'X-Auth-Token': FOOTBALL_API_KEY };
+
+  var [matchRes, standRes] = await Promise.all([
+    fetch(base + '/competitions/PL/matches?status=FINISHED&limit=12', { headers: headers }),
+    fetch(base + '/competitions/PL/standings', { headers: headers }),
+  ]);
+
+  var matchData  = await matchRes.json();
+  var standData  = await standRes.json();
+
+  /* ── Últimos resultados ── */
+  var recent = [];
+  if (matchData.matches) {
+    var finished = matchData.matches
+      .filter(function(m){ return m.score && m.score.fullTime && m.score.fullTime.home!==null; })
+      .sort(function(a,b){ return new Date(b.utcDate)-new Date(a.utcDate); })
+      .slice(0,10);
+    finished.forEach(function(m) {
+      var h = nameToCode(m.homeTeam.name);
+      var a = nameToCode(m.awayTeam.name);
+      if (h && a) {
+        recent.push({
+          h: h, a: a,
+          s: m.score.fullTime.home + '-' + m.score.fullTime.away,
+          d: formatMatchDay(m.utcDate)
+        });
+      }
+    });
+  }
+
+  /* ── Tabla de posiciones ── */
+  var standings = [];
+  if (standData.standings && standData.standings[0]) {
+    standData.standings[0].table.forEach(function(row, i) {
+      var code = nameToCode(row.team.name);
+      if (code) {
+        standings.push({
+          r: row.position,
+          a: code,
+          gp: row.playedGames,
+          w: row.won,
+          d: row.draw,
+          l: row.lost,
+          pts: row.points,
+          gf: row.goalsFor,
+          ga: row.goalsAgainst,
+        });
+      }
+    });
+  }
+
+  return { recent: recent, standings: standings };
+}
+
 const bdg = r => r<=4?{c:'#00d4aa'}:r<=6?{c:'#f0c040'}:r>=18?{c:'#ff4455'}:{c:'transparent'};
 const fC = r => r==='W'?'#00d4aa':r==='L'?'#ff4455':'#f0c040';
 const pL = p => ({h:'Local',a:'Visita',d:'Empate'}[p]||'—');
@@ -428,6 +518,35 @@ function MainApp({user, onLogout}) {
   var [scorerY, setScorerY] = useState('2025-26');
   var [scorerView, setScorerView] = useState('scorers');
   var [bettingOpen, setBettingOpen] = useState(null);
+  /* ── Live data from football-data.org ── */
+  var [liveRecent,   setLiveRecent]   = useState(null);  /* null = usando datos hardcoded */
+  var [liveStandings,setLiveStandings]= useState(null);
+  var [apiStatus,    setApiStatus]    = useState('idle'); /* idle | loading | ok | error */
+  var [lastUpdated,  setLastUpdated]  = useState(null);
+
+  /* Auto-fetch al montar la app — solo si hay API key configurada */
+  useEffect(function() {
+    if (FOOTBALL_API_KEY === 'TU_API_KEY_AQUI') {
+      setApiStatus('no-key');
+      return;
+    }
+    setApiStatus('loading');
+    fetchEPLData()
+      .then(function(data) {
+        if (data.recent.length > 0)    setLiveRecent(data.recent);
+        if (data.standings.length > 0) setLiveStandings(data.standings);
+        setApiStatus('ok');
+        setLastUpdated(new Date().toLocaleTimeString('es-CR', {hour:'2-digit',minute:'2-digit'}));
+      })
+      .catch(function(err) {
+        console.warn('EPL API error:', err.message);
+        setApiStatus('error');
+      });
+  }, []);
+
+  /* Usa datos live si están disponibles, si no usa los hardcoded */
+  var displayRecent   = liveRecent   || RECENT;
+  var displayStandings = liveStandings || ST;
 
   useEffect(function(){ savePredScores('win',  predWin);   }, [predWin]);
   useEffect(function(){ savePredScores('santi', predSanti); }, [predSanti]);
@@ -521,16 +640,23 @@ function MainApp({user, onLogout}) {
             <div style={{fontSize:9,color:'#8090b0',letterSpacing:2}}>PREMIER LEAGUE 2025–26</div>
           </div>
         </div>
-        <button onClick={function(){ setMenuOpen(!menuOpen); }} style={{display:'flex',alignItems:'center',gap:7,background:'#151d2e',border:'1px solid '+user.color+'44',borderRadius:9,padding:'5px 10px',cursor:'pointer',transition:'all .2s'}}
-          onMouseEnter={function(e){ e.currentTarget.style.borderColor=user.color+'88'; }}
-          onMouseLeave={function(e){ e.currentTarget.style.borderColor=user.color+'44'; }}>
-          <span style={{fontSize:17}}>{user.icon}</span>
-          <div style={{textAlign:'left'}}>
-            <div style={{fontSize:12,fontWeight:700,color:'#fff',lineHeight:1}}>{user.label}</div>
-            <div style={{fontSize:9,color:user.color,letterSpacing:1}}>{user.role==='admin'?'ADMIN':'VIEWER'}</div>
-          </div>
-          <span style={{fontSize:11,color:'#6070a0',marginLeft:2}}>▾</span>
-        </button>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          {/* API status dot */}
+          {apiStatus==='loading'&&<div style={{fontSize:10,color:'#f0c040',animation:'shimmer 1s infinite'}}>🔄</div>}
+          {apiStatus==='ok'&&<div title={'Actualizado '+lastUpdated} style={{fontSize:10,color:'#00d4aa',cursor:'default'}}>🟢</div>}
+          {apiStatus==='error'&&<div title="Usando datos locales" style={{fontSize:10,color:'#ff4455',cursor:'default'}}>🔴</div>}
+          {apiStatus==='no-key'&&<div title="Sin API key" style={{fontSize:10,color:'#f0c040',cursor:'default'}}>🔑</div>}
+          <button onClick={function(){ setMenuOpen(!menuOpen); }} style={{display:'flex',alignItems:'center',gap:7,background:'#151d2e',border:'1px solid '+user.color+'44',borderRadius:9,padding:'5px 10px',cursor:'pointer',transition:'all .2s'}}
+            onMouseEnter={function(e){ e.currentTarget.style.borderColor=user.color+'88'; }}
+            onMouseLeave={function(e){ e.currentTarget.style.borderColor=user.color+'44'; }}>
+            <span style={{fontSize:17}}>{user.icon}</span>
+            <div style={{textAlign:'left'}}>
+              <div style={{fontSize:12,fontWeight:700,color:'#fff',lineHeight:1}}>{user.label}</div>
+              <div style={{fontSize:9,color:user.color,letterSpacing:1}}>{user.role==='admin'?'ADMIN':'VIEWER'}</div>
+            </div>
+            <span style={{fontSize:11,color:'#6070a0',marginLeft:2}}>▾</span>
+          </button>
+        </div>
       </header>
 
       {/* NAV */}
@@ -549,14 +675,22 @@ function MainApp({user, onLogout}) {
           <div className="fade">
             <div style={{background:'linear-gradient(135deg,#1c0a0a,#2a1010)',border:'1px solid #EF010755',borderRadius:12,padding:'13px 15px',marginBottom:10,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <div>
-                <div style={{fontSize:9,color:'#EF010799',letterSpacing:2,marginBottom:3}}>🏆 LÍDER 2025-26</div>
-                <div style={{fontSize:23,fontWeight:800,color:'#fff',letterSpacing:1}}>Arsenal FC</div>
-                <div style={{fontSize:12,color:'#EF010799',marginTop:2}}>67 pts · 30 PJ · +7 sobre Man City</div>
+                <div style={{fontSize:9,color:'#EF010799',letterSpacing:2,marginBottom:3}}>🏆 LÍDER {displayStandings[0]?'·':''} 2025-26</div>
+                <div style={{fontSize:23,fontWeight:800,color:'#fff',letterSpacing:1}}>{displayStandings[0]?T[displayStandings[0].a].n:'Arsenal FC'}</div>
+                <div style={{fontSize:12,color:'#EF010799',marginTop:2}}>
+                  {displayStandings[0]?displayStandings[0].pts:'67'} pts · {displayStandings[0]?displayStandings[0].gp:'30'} PJ
+                  {displayStandings[0]&&displayStandings[1]?' · +' + (displayStandings[0].pts - displayStandings[1].pts) + ' sobre ' + T[displayStandings[1].a].n:''}
+                </div>
               </div>
-              <div style={{fontSize:44}}>🔴</div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:44}}>{displayStandings[0]&&T[displayStandings[0].a]?T[displayStandings[0].a].c==='#EF0107'?'🔴':T[displayStandings[0].a].c==='#6CABDD'?'🔵':'⚽':'🔴'}</div>
+                {apiStatus==='ok'&&lastUpdated&&<div style={{fontSize:9,color:'#00d4aa',marginTop:4}}>🟢 {lastUpdated}</div>}
+                {apiStatus==='loading'&&<div style={{fontSize:9,color:'#f0c040',animation:'shimmer 1s infinite',marginTop:4}}>🔄 Actualizando...</div>}
+                {apiStatus==='no-key'&&<div style={{fontSize:9,color:'#f0c04088',marginTop:4}}>🔑 Sin API key</div>}
+              </div>
             </div>
             <div style={{fontSize:9,color:'#00d4aa',letterSpacing:2,margin:'9px 0 6px'}}>ÚLTIMOS RESULTADOS · JOR. 29</div>
-            {RECENT.map(function(m,i) {
+            {displayRecent.map(function(m,i) {
               var parts=m.s.split('-').map(Number); var hw=parts[0]>parts[1], aw=parts[1]>parts[0];
               return (
                 <div key={i} className="rh" style={{display:'flex',alignItems:'center',background:i%2===0?'#0d1220':'#0a101c',border:'1px solid #ffffff08',borderRadius:8,marginBottom:3,padding:'7px 10px',gap:6}}>
@@ -722,7 +856,7 @@ function MainApp({user, onLogout}) {
               <div style={{display:'grid',gridTemplateColumns:'27px 6px 1fr 30px 24px 24px 24px 32px auto',gap:3,padding:'7px 9px',background:'#111826',fontSize:9,color:'#6070a0',letterSpacing:.5,fontWeight:700}}>
                 <span>#</span><span/><span>EQUIPO</span><span style={{textAlign:'center'}}>PJ</span><span style={{textAlign:'center',color:'#00d4aa'}}>G</span><span style={{textAlign:'center',color:'#f0c040'}}>E</span><span style={{textAlign:'center',color:'#ff4455'}}>P</span><span style={{textAlign:'right',color:'#00d4aa'}}>PTS</span><span style={{textAlign:'right',paddingRight:4}}>FORMA</span>
               </div>
-              {ST.map(function(s,i) {
+              {displayStandings.map(function(s,i) {
                 var b=bdg(s.r); var form=FORM[s.a]||[];
                 return (
                   <div key={i} className="rh" onClick={function(){ setTeamDetail(s.a); }} style={{display:'grid',gridTemplateColumns:'27px 6px 1fr 30px 24px 24px 24px 32px auto',gap:3,padding:'6px 9px',alignItems:'center',fontSize:12,background:i%2===0?'#0d1220':'#0a101c',borderLeft:'3px solid '+(b.c!=='transparent'?b.c:'transparent')}}>
